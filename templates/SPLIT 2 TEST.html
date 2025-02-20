@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mold Tool Management</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+       body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url("/static/images/image 4.jpeg");
+            background-size: cover; /* Ensure the background image covers the entire page */
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        .navbar {
+            background-color: rgba(0, 0, 0, 0.7); /* Transparent navbar */
+            position: absolute;
+            top: 0;
+            width: 100%;
+            z-index: 10; /* Ensures navbar stays on top of content */
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: #ecf0f1;
+            font-size: 1.75rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: #ecf0f1;
+            font-size: 1.1rem;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #3498db;
+        }
+
+        section {
+            padding: 60px 0;
+        }
+
+        .section-title {
+            margin-bottom: 40px;
+            font-weight: bold;
+            text-align: left;
+            color: #003366;
+            font-size: 2rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-body {
+            padding: 2.5rem;
+        }
+
+        .btn-primary,
+        .btn-success,
+        .btn-warning {
+            transition: background-color 0.3s;
+            border-radius: 50px;
+        }
+
+        .btn-primary:hover {
+            background-color: #004d99;
+        }
+
+        .btn-success:hover {
+            background-color: #28a745;
+        }
+
+        .btn-warning:hover {
+            background-color: #ff9800;
+        }
+
+        .bg-light {
+            background-color: #f8f9fa !important;
+        }
+
+        footer {
+            background-color: #003366;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+            font-size: 1.1rem;
+        }
+
+        .scroll-to-section {
+            cursor: pointer;
+        }
+
+        .icon {
+            font-size: 5rem;
+            color: #007bff;
+        }
+
+        .analytics-img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+        }
+
+        .form-select {
+            border-radius: 8px;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+        }
+
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            .navbar-toggler {
+                border-color: #fff;
+            }
+        }
+
+        .btn-rounded {
+            border-radius: 50px;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        #tool-management {
+            background-color: #f1f1f1;
+        }
+
+        #tool-check {
+            background-color: #f9f9f9;
+        }
+
+        .result-container {
+            margin-top: 20px;
+        }
+
+        #dashboard {
+            background-color: #0062cc;
+            color: #fff;
+        }
+
+        #tool-management {
+            background-color: #f1f1f1;
+        }
+
+        #search-filter {
+            background-color: #e9ecef;
+        }
+
+        #stock-check {
+            background-color: #f3f3f3;
+        }
+
+        #import-export {
+            background-color: #e9ecef;
+        }
+
+        #analytics {
+            background-color: #f1f1f1;
+        }
+
+        .card.bg-primary {
+            background-color: #003366 !important;
+        }
+
+        .card.bg-success {
+            background-color: #28a745 !important;
+        }
+
+        .card.bg-warning {
+            background-color: #ff9800 !important;
+        }
+
+        /* Colorful Tool Check Card */
+        .tool-check-card {
+            background: linear-gradient(145deg, #1e2a47, #3a4b8c);
+            color: #fff;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .tool-check-card-header {
+            background: #1a2b53;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .tool-check-card-header h5 {
+            font-weight: bold;
+        }
+
+        .tool-check-card-body {
+            padding: 25px;
+        }
+
+        .tool-check-btn {
+            background-color: #28a745;
+            color: #fff;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        .tool-check-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+        <!-- Icon and Brand Name -->
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-cogs me-2"></i> <!-- Icon added with some spacing -->
+            Mould Tool Management System
+        </a>
+
+        <!-- Toggler Button -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navbar Links -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto"> <!-- Align buttons to the right -->
+                <!-- Dashboard Button -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Dashboard</a>
+                </li>
+                <!-- Stock Check Button -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/STOCKCHECK">Stock Check</a>
+                </li>
+                <!-- PPAR Button with white text -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/PPAR" style="color: white;">PPAR</a>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+
+
+<section id="tool-check">
+        <div class="container">
+            <h2 class="section-title">TOOL FINDER IN A BATCH</h2>
+            <div class="card tool-check-card">
+                <div class="card-header tool-check-card-header">
+                    <h5>Enter Tool Number & Scan Tools</h5>
+                </div>
+                <div class="card-body tool-check-card-body">
+                    <!-- Tool Number Input -->
+<div class="form-group mb-3">
+    <label for="toolNumber" class="form-label">Enter Tool Number:</label>
+    <input type="text" class="form-control" id="toolNumber" placeholder="Enter Tool Number">
+</div>
+
+<!-- Scanned Tools Textarea -->
+<div class="form-group">
+    <label for="scannedTools" class="form-label">Scan the Tools:</label>
+    <textarea id="scannedTools" class="form-control" rows="10" placeholder="Enter scanned tool numbers, separated by commas or new lines"></textarea>
+</div>
+
+
+                    <!-- Compare Button -->
+                    <button id="compareBtn" class="tool-check-btn">Compare</button>
+
+                    <!-- Result of Comparison -->
+                    <div id="result" class="result-container"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+   <section id="stock-check">
+    <div class="container">
+        <h2 class="section-title">STOCK CHECK FOR MOULD TOOLS</h2>
+        <div class="card tool-check-card">
+            <!-- Added Card Header -->
+            <div class="card-header tool-check-card-header">
+                <h5>Scan Mould Tools</h5>
+            </div>
+            <div class="card-body tool-check-card-body">
+                <p>Scan mould tools using an RFID reader and verify their stock against the existing database by entering the scanned tool numbers below.</p>
+                <!-- Scanned Tools Textarea with Unique ID -->
+                <div class="form-group">
+                    <label for="scannedToolsStockCheck" class="form-label">Scanned Tools:</label>
+                    <textarea id="scannedToolsStockCheck" class="form-control" rows="10" placeholder="Enter scanned tool numbers, separated by commas or new lines"></textarea>
+                </div>
+                <!-- Unique Button ID -->
+                <button id="verifyStockBtn" class="tool-check-btn">Verify Stock</button>
+                <!-- Result Container -->
+                <div id="stockCheckResult" class="result-container"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+                </div>
+            </div>
+        </div>
+
+
+
+
+    <!-- Import/Export -->
+    <section id="import-export" >
+        <div class="container">
+            <h2 class="section-title">IMPORT/EXPORT</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Upload CSV</h5>
+                           <form id="uploadForm" enctype="multipart/form-data">
+                            <input type="file" name="file" id="fileInput" class="form-control mb-3" accept=".csv" required>
+                            <button type="submit" class="btn btn-primary">Upload</button>
+                        </form>
+                            <div id="uploadMessage" class="mt-2"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Download Data</h5>
+<a href="/export_csv" class="btn btn-success">Download CSV</a>                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 Mold Management System. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+   <script>
+       document.getElementById("compareBtn").addEventListener("click", function () {
+           // Get the entered tool number
+           const toolNumber = document.getElementById("toolNumber").value.trim();
+
+           // Get the scanned tools and process them into an array
+           const scannedTools = document.getElementById("scannedTools").value
+               .split(/[\s,]+/) // Split by commas, spaces, or new lines
+               .map(tool => tool.trim()) // Trim extra whitespace
+               .filter(tool => tool !== ""); // Remove empty values
+
+           const resultContainer = document.getElementById("result");
+
+           if (toolNumber === "") {
+               resultContainer.innerHTML = '<p class="text-warning">Please enter a tool number to search.</p>';
+               return;
+           }
+
+           // Helper function: Normalize strings (remove spaces, special characters, and lowercase)
+           const normalize = (str) => str.replace(/[\s\-\/]/g, "").toLowerCase();
+
+           // Normalize the toolNumber
+           const normalizedToolNumber = normalize(toolNumber);
+
+           // Check if there is an exact or close match
+           let exactMatch = false;
+           let closeMatch = null;
+
+           for (let scannedTool of scannedTools) {
+               const normalizedScannedTool = normalize(scannedTool);
+
+               // Check for exact match
+               if (normalizedToolNumber === normalizedScannedTool) {
+                   exactMatch = true;
+                   break;
+               }
+
+               // Check for close match using Levenshtein distance
+               if (getLevenshteinDistance(normalizedToolNumber, normalizedScannedTool) <= 2) {
+                   closeMatch = scannedTool;
+               }
+           }
+
+           // Display the results
+           if (exactMatch) {
+               resultContainer.innerHTML = `<p class="text-warning">Tool <strong>${toolNumber}</strong> is present in the batch.</p>`;
+           } else if (closeMatch) {
+               resultContainer.innerHTML = `<p class="text-warning">A close match was found.</p>`;
+           } else {
+               resultContainer.innerHTML = `<p class="text-warning">Tool <strong>${toolNumber}</strong> is not present in the batch.</p>`;
+           }
+       });
+
+       // Helper function: Calculate Levenshtein Distance
+       function getLevenshteinDistance(a, b) {
+           const matrix = [];
+           const lenA = a.length;
+           const lenB = b.length;
+
+           // Initialize matrix
+           for (let i = 0; i <= lenA; i++) {
+               matrix[i] = [i];
+           }
+           for (let j = 0; j <= lenB; j++) {
+               matrix[0][j] = j;
+           }
+
+           // Populate matrix
+           for (let i = 1; i <= lenA; i++) {
+               for (let j = 1; j <= lenB; j++) {
+                   if (a[i - 1] === b[j - 1]) {
+                       matrix[i][j] = matrix[i - 1][j - 1];
+                   } else {
+                       matrix[i][j] = Math.min(
+                           matrix[i - 1][j] + 1, // Deletion
+                           matrix[i][j - 1] + 1, // Insertion
+                           matrix[i - 1][j - 1] + 1 // Substitution
+                       );
+                   }
+               }
+           }
+
+           return matrix[lenA][lenB];
+       }
+
+
+           // Handle CSV upload
+           document.querySelector("#uploadForm").addEventListener("submit", function(event) {
+           event.preventDefault(); // Prevent form submission
+
+           const formData = new FormData(this);
+           fetch("/import_csv", {
+           method: "POST",
+           body: formData,
+       })
+           .then(response => response.json())
+           .then(data => {
+           const messageDiv = document.querySelector("#uploadMessage");
+           if (data.status === "success") {
+           messageDiv.textContent = data.message;
+           messageDiv.className = "text-success";
+       } else {
+           messageDiv.textContent = data.message;
+           messageDiv.className = "text-danger";
+       }
+       })
+           .catch(error => {
+           console.error("Error:", error);
+       });
+       });
+
+</script>
+
+
+</body>
+
+</html>

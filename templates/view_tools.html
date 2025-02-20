@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Data</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>View Mould Tools</h1>
+    <table>
+        <tr>
+            <th>Tool Number</th>
+            <th>Tool Location</th>
+            <th>Jig Number</th>
+            <th>Jig Location</th>
+            <th>Company Name/Code</th>
+            <th>Status</th>
+        </tr>
+        {% for tool in tools %}
+        <tr>
+            <td>{{ tool.tool_number }}</td>
+            <td>{{ tool.tool_location }}</td>
+            <td>{{ tool.jig_number }}</td>
+            <td>{{ tool.jig_location }}</td>
+            <td>{{ tool.company_name_code }}</td>
+            <td>{{ tool.status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h1>View PPAR Records</h1>
+    <table>
+        <tr>
+            <th>Customer Name</th>
+            <th>Part Number</th>
+            <th>Inspected By</th>
+            <th>Part Description</th>
+            <th>WO Number</th>
+            <th>Revision Number</th>
+            <th>Date</th>
+            <th>Mould Checks</th>
+            <th>Jig Checks</th>
+            <th>Issues/Solutions</th>
+            <th>Suggested Tool Temp (°C)</th>
+            <th>Tooling Ready</th>
+            <th>Signed Off By</th>
+            <th>Forming - Check Work Order</th>
+            <th>Forming - Check Visual</th>
+            <th>New Vac Program Saved</th>
+            <th>Vac Program Name</th>
+            <th>Required Cycle Time (mins)</th>
+            <th>Achieved Cycle Time (mins)</th>
+            <th>Forming - Issues/Solutions</th>
+            <th>Actual Tool Temp (°C)</th>
+            <th>Forming - Final Checks</th>
+            <th>Failure Attempt</th>
+            <th>Forming Signed Off By</th>
+            <th>Forming Date</th>
+            <th>Trimming - New Trim Program Saved</th>
+            <th>Trim Program Name</th>
+            <th>Required Cycle Time (mins)</th>
+            <th>Achieved Cycle Time (mins)</th>
+            <th>Trimming - Issues/Solutions</th>
+            <th>Run On</th>
+            <th>Cutter Used</th>
+            <th>Trimming - Final Checks</th>
+            <th>Trimming Failure Attempt</th>
+            <th>Trimming Signed Off By</th>
+            <th>Trimming Date</th>
+            <th>After Test Run - Description of Changes</th>
+            <th>Dimensional Grid</th>
+            <th>Fair Complete</th>
+            <th>Engineering Sign-off Date</th>
+            <th>MRP Updated</th>
+            <th>Production Sign-off Date</th>
+        </tr>
+        {% for record in ppar_records %}
+        <tr>
+            <td>{{ record.customer_name }}</td>
+            <td>{{ record.part_number }}</td>
+            <td>{{ record.inspected_by }}</td>
+            <td>{{ record.part_description }}</td>
+            <td>{{ record.wo_number }}</td>
+            <td>{{ record.revision_number }}</td>
+            <td>{{ record.date }}</td>
+            <td>{{ record.mould_checks }}</td>
+            <td>{{ record.jig_checks }}</td>
+            <td>{{ record.issues_and_solutions }}</td>
+            <td>{{ record.suggested_tool_temp }}</td>
+            <td>{{ record.tooling_ready }}</td>
+            <td>{{ record.signed_off_by }}</td>
+            <td>{{ record.forming_check_work_order }}</td>
+            <td>{{ record.forming_check_visual }}</td>
+            <td>{{ record.new_vac_program_saved }}</td>
+            <td>{{ record.vac_program_name }}</td>
+            <td>{{ record.required_cycle_time }}</td>
+            <td>{{ record.achieved_cycle_time }}</td>
+            <td>{{ record.forming_issues_and_solutions }}</td>
+            <td>{{ record.actual_tool_temp }}</td>
+            <td>{{ record.forming_final_checks }}</td>
+            <td>{{ record.failure_attempt }}</td>
+            <td>{{ record.forming_signed_off_by }}</td>
+            <td>{{ record.forming_date }}</td>
+            <td>{{ record.new_trim_program_saved }}</td>
+            <td>{{ record.trim_program_name }}</td>
+            <td>{{ record.required_trim_cycle_time }}</td>
+            <td>{{ record.achieved_trim_cycle_time }}</td>
+            <td>{{ record.trimming_issues_and_solutions }}</td>
+            <td>{{ record.run_on }}</td>
+            <td>{{ record.cutter_used }}</td>
+            <td>{{ record.trimming_final_checks }}</td>
+            <td>{{ record.trimming_failure_attempt }}</td>
+            <td>{{ record.trimming_signed_off_by }}</td>
+            <td>{{ record.trimming_date }}</td>
+            <td>{{ record.after_test_run_changes }}</td>
+            <td>
+                <table>
+                    {% for grid in record.dimensional_grid %}
+                    <tr>
+                        <td>{{ grid.ref }}</td>
+                        <td>{{ grid.dimension }}</td>
+                        <td>{{ grid.tolerance }}</td>
+                        <td>{{ grid.actual_dimension }}</td>
+                        <td>{{ grid.acceptable }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{{ record.fair_complete }}</td>
+            <td>{{ record.engineering_signoff_date }}</td>
+            <td>{{ record.mrp_updated }}</td>
+            <td>{{ record.production_signoff_date }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

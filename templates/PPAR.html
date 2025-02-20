@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Part Approval Report</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font for card -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+    /* Apply background image to the whole page */
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-image: url("{{ url_for('static', filename='images/image 4.jpeg') }}");
+        background-size: cover; /* Cover the entire page */
+        background-position: center; /* Center the image */
+        background-attachment: fixed; /* Fix the background when scrolling */
+        background-repeat: no-repeat; /* Prevent background image from repeating */
+        color: #f8f9fa; /* Light text color for dark backgrounds */
+    }
+
+    /* Title Section Styling */
+    .title-section {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        color: #333; /* Dark text for better visibility */
+        background: rgba(255, 255, 255, 0.8); /* Semi-transparent background for contrast */
+        padding: 20px;
+        border-bottom: 2px solid #ccc;
+        z-index: 2; /* Ensure the title section is above the navbar */
+    }
+
+    .logo {
+        max-width: 200px;
+    }
+
+    .title {
+        text-align: center;
+        flex: 1;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .details {
+        text-align: right;
+    }
+
+    /* Sticky Navbar */
+    .navbar {
+        background-color: rgba(255, 255, 255, 0.8) !important; /* Ensures matching background color */
+        box-shadow: none; /* Remove any box shadow */
+        margin-top: 0; /* Ensure no gap above the navbar */
+        padding: 0; /* Remove any extra padding */
+        z-index: 1; /* Place navbar below title section */
+    }
+
+    .navbar-light .navbar-nav .nav-link {
+        color: black !important; /* Text color for navbar links */
+    }
+
+    /* Card Styling */
+    .card {
+        margin-bottom: 20px;
+        background-color: #ffffff; /* White background for cards */
+        border-radius: 15px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+        transition: all 0.3s ease-in-out; /* Smooth transition effect */
+    }
+
+    .card:hover {
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2); /* Stronger shadow on hover */
+        transform: translateY(-8px); /* Lift effect for interactivity */
+    }
+
+    .card-header {
+        background-color: #3498db; /* Soft Blue for header background */
+        font-weight: bold;
+        color: white;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        padding: 18px;
+        font-size: 20px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .card-body {
+        padding: 20px;
+        color: #333; /* Dark text for readability */
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    /* Input styling */
+    input[type="text"], input[type="date"], input[type="number"], textarea, .form-control {
+        transition: all 0.3s ease;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 12px;
+        font-size: 16px;
+        background-color: #fafafa; /* Light gray background for input fields */
+    }
+
+    input[type="text"]:focus, input[type="date"]:focus, input[type="number"]:focus, textarea:focus {
+        border-color: #3498db; /* Blue accent on focus */
+        box-shadow: 0 0 8px rgba(52, 152, 219, 0.5);
+        outline: none;
+    }
+
+    .form-check-label {
+        margin-right: 20px; /* Space between checkboxes */
+    }
+
+    h5 {
+        font-size: 18px;
+        color: #2980b9; /* Blue text for section headers */
+    }
+
+    .form-check-label {
+        color: #333;
+    }
+
+    /* Form and button styling */
+    button:hover {
+        background-color: #2980b9;
+        transform: scale(1.05);
+        transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+
+    .form-label {
+        font-weight: bold;
+        color: #333;
+    }
+/* Title Section Styling */
+    header .title-section {
+        background: rgba(255, 255, 255, 0.8); /* Keeping the background for the title section */
+    }
+
+    /* Sticky Navbar */
+    nav.navbar {
+        background-color: rgba(255, 255, 255, 0.3) !important; /* More transparent navbar */
+        z-index: 100;
+    }
+
+    body.locked {
+        display: none; /* Hide everything initially */
+    }
+
+    body.unlocked {
+        display: block; /* Show everything when unlocked */
+    }
+
+    .password-prompt {
+        font-family: Arial, sans-serif;
+        font-size: 18px;
+        text-align: center;
+        margin-top: 50px;
+        color: black;
+    }
+
+    .password-prompt input {
+        padding: 10px;
+        font-size: 16px;
+    }
+
+        .password-prompt button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    /* Responsive Design for smaller devices */
+    @media (max-width: 768px) {
+        .title-section {
+            flex-direction: column;
+            text-align: center;
+        }
+        .details {
+            text-align: center;
+            margin-top: 15px;
+        }
+    }
+</style>
+
+
+
+<body>
+<!--<div id="content" style="display: none;">-->
+
+
+
+ <!-- Title Section Styling -->
+<header class="title-section" style="background: rgba(255, 255, 255, 0.8);">
+    <div class="logo-container" style="position: relative;">
+        <!-- Company Logo -->
+        <img src="{{ url_for('static', filename='images/company logo.jpg') }}" alt="Company Logo" class="logo">
+    </div>
+    <div class="title" style="position: relative;">
+        <!-- Title of the Page -->
+        Production Part Approval Report
+    </div>
+
+    <!-- Sticky Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top" style="background-color: rgba(255, 255, 255, 0.5); z-index: 100;">
+        <div class="container-fluid">
+            <!-- Brand with Icon -->
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-tools me-2"></i> <!-- Icon with some spacing -->
+            </a>
+            <!-- Toggler Button for Mobile -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <!-- Navigation Links -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="/" style="color: black;">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/STOCKCHECK" style="color: black;">Stock Check</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/PPAR" style="color: black;">PPAR</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/view_tools" style="color: black;">View Mould tools</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+
+
+
+
+
+    <div>
+         sc
+    </div>
+    <div class="container" style="padding: 20px;">
+    <!-- Card for New Form Button -->
+    <div class="card mt-3" style="background-color: rgba(255, 255, 255, 0.7);">
+        <div class="card-body text-center" style="padding: 20px;">
+            <!-- New Form and Instruction Button -->
+            <div class="d-flex justify-content-center align-items-center">
+                <!-- Instruction Text with Darker Color -->
+                <span class="mr-2" style="font-size: 14px; color: #000000;"> <!-- Pure black text color -->
+                    Click this button for a new form or search for a part number if already existing.
+                </span>
+                <!-- New Form Button with fixed width -->
+                <button class="btn btn-primary" id="new-form-btn" style="width: 200px;">New Form</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card for Part Number Input -->
+ <!-- Form for searching by part number -->
+        <form method="GET" action="/search_part" id="part-number-form">
+    <div class="card mt-3" style="background-color: rgba(255, 255, 255, 0.7);">
+        <div class="card-body text-center" style="padding: 20px;">
+            <!-- Input Field for Part Number -->
+            <div class="input-group mb-3 justify-content-center">
+                <input
+                    type="text"
+                    class="form-control w-50"
+                    id="part-number-input"
+                    name="part_number"
+                    placeholder="Enter Part Number"
+                    aria-label="Part Number"
+                    aria-describedby="search-part-btn"
+                    style="color: #000000;" >
+
+                <!-- Search by Part Number Button with fixed width -->
+                <button
+                    type="submit"
+                    class="btn"
+                    id="search-part-btn"
+                    style="background-color: #007bff; color: white; border: none; width: 200px;"
+                    onmouseover="this.style.backgroundColor='#007bff'; this.style.color='white';"
+                    onmouseout="this.style.backgroundColor='#007bff'; this.style.color='white';">
+                    Search by Part Number
+                </button>
+            </div>
+        </div>
+    </div>
+        </form>
+
+        <!-- Container to display options -->
+<div id="options-container" class="text-center mt-3"></div>
+
+ <form method="POST" action="/save_form" id="data-form" >
+     <input type="hidden" name="id" id="record-id">
+    <div class="container mt-4">
+    <!-- Section 1 -->
+    <div class="card">
+        <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <span class="mb-2 mb-md-0 text-center text-md-start">
+                Section 1: General Information
+            </span>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-danger btn-sm text-white px-3" id="edit-section1">Edit</button>
+                <button type="button" class="btn btn-danger btn-sm text-white px-3" id="save-section1">Save</button>
+            </div>
+        </div>
+        <div class="card-body">
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="customer_name" class="form-label"><strong>Customer Name:</strong></label>
+                        <input type="text" id="customer_name" name="customer_name" class="form-control" placeholder="Enter Customer Name">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="part_number" class="form-label"><strong>Part Number:</strong></label>
+                        <input type="text" id="part_number" name="part_number" class="form-control" placeholder="Enter Part Number">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="inspected_by" class="form-label"><strong>Inspected By:</strong></label>
+                        <input type="text" id="inspected_by" name="inspected_by" class="form-control" placeholder="Enter Name of Inspector">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="part_description" class="form-label"><strong>Part Description:</strong></label>
+                        <input type="text" id="part_description" name="part_description" class="form-control" placeholder="Enter Part Description">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="wo_number" class="form-label"><strong>WO Number:</strong></label>
+                        <input type="text" id="wo_number" name="wo_number" class="form-control" placeholder="Enter WO Number">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="revision_number" class="form-label"><strong>Revision Number:</strong></label>
+                        <input type="text" id="revision_number" name="revision_number" class="form-control" placeholder="Enter Revision Number">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="date" class="form-label"><strong>Date:</strong></label>
+                        <input type="date" id="date" name="date" class="form-control">
+                    </div>
+                </div>
+        </div>
+    </div>
+        <!-- Section 2 -->
+        <div class="card">
+             <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-center">
+    <span class="mb-2 mb-md-0 text-center text-md-start">
+        Section 2: Quality Checks (To be filled by Engineering Team)
+    </span>
+
+</div>
+            <div class="card-body">
+                <!-- MOULD Section -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Mould</h5>
+    <div class="row">
+        <div class="col-md-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="mould-base" name="mould-base" value="Base">
+                <label class="form-check-label" for="mould-base">Base</label>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="mould-vac-former" name="mould-vac-former" value="Vac Former">
+                <label class="form-check-label" for="mould-vac-former">Vac Former</label>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="mould-vacuum-holes" name="mould-vacuum-holes" value="Vacuum Holes">
+                <label class="form-check-label" for="mould-vacuum-holes">Vacuum Holes</label>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="mould-clean" name="mould-clean" value="Clean">
+                <label class="form-check-label" for="mould-clean">Clean</label>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="mould-sealed" name="mould-sealed" value="Sealed">
+                <label class="form-check-label" for="mould-sealed">Sealed</label>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="mould-temp-control" name="mould-temp-control" value="Temp Control">
+                <label class="form-check-label" for="mould-temp-control">Temp Control</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JIG Section -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Jig</h5>
+    <div class="row">
+        <div class="col-md-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="jig-vacuum" name="jig-vacuum" value="Vacuum">
+                <label class="form-check-label" for="jig-vacuum">Vacuum</label>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="jig-plate-location" name="jig-plate-location" value="Plate/Location">
+                <label class="form-check-label" for="jig-plate-location">Plate/Location</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+               <!-- Failure Attempt Dropdown Section -->
+               <div class="mb-4">
+                   <h5 class="font-weight-bold text-decoration-underline">Failure Attempt</h5>
+                   <label for="failure-attemptt" class="form-label">Select Failure Attempt</label>
+                   <select class="form-select" id="failure-attemptt" name="failure-attemptt">
+                       <option value="" disabled selected>Click here to select the number of attempts</option>
+                       <option value="PASSED 1ST ATTEMPT">PASSED 1ST ATTEMPT</option>
+                       <option value="1st Time Fail">1st Time Fail</option>
+                       <option value="2nd Time Fail">2nd Time Fail</option>
+                       <option value="3rd Time Fail">3rd Time Fail</option>
+                       <option value="4th Time Fail">4th Time Fail</option>
+                       <option value="5th Time Fail">5th Time Fail</option>
+                       <option value="5+ Time Fail">More than 5 Time Fail</option>
+                   </select>
+               </div>
+
+                <!-- Issues and Suggested Solutions Section -->
+                <div class="mb-4">
+                    <h5 class="font-weight-bold text-decoration-underline">Issues and Suggested Solutions</h5>
+                    <textarea class="form-control" rows="3" name="issues_and_suggested_solutions" id="issues_and_suggested_solutions" placeholder="Enter any issues and suggested solutions"></textarea>
+                </div>
+
+                <!-- Suggested Tool Temp Section -->
+                <div class="mb-4">
+                    <h5 class="font-weight-bold text-decoration-underline">Suggested Tool Temp (°C)</h5>
+                    <input type="number" class="form-control" name="suggested_tool_temp" id="suggested_tool_temp" placeholder="Enter temperature in Celsius">
+                </div>
+
+                <!-- Tooling ready for production Checkbox -->
+                <div class="mb-4">
+                    <h5 class="font-weight-bold text-decoration-underline text-left" for="tooling_ready">Is the Tooling ready for production?</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="tooling_ready" id="yes" value="yes">
+                                    <label class="form-check-label" for="yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check ml-2">
+                                    <input class="form-check-input" type="radio" name="tooling_ready" id="no" value="no">
+                                    <label class="form-check-label" for="no">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                                <!-- Program Name Input Field Below -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Total Tools complete</h5>
+    <input type="text" class="form-control" id="tool" name="tool" placeholder=" Enter the number of Tools complete(1 or 2)">
+</div>
+
+                <!-- Program Name Input Field Below -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Signed off by</h5>
+    <input type="text" class="form-control" id="signed_off_by" name="signed_off_by" placeholder=" Enter Operator Name">
+</div>
+
+
+<!-- Date Section (matching style of Signed off by) -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Tooling Date</h5>
+    <input type="date" id="da" name="da" class="form-control">
+</div>
+
+
+
+            </div>
+        </div>
+
+ <!-- Section 3 -->
+        <div class="card">
+             <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-center">
+    <span class="mb-2 mb-md-0 text-center text-md-start">
+        Section 3: FORMING (To be filled by PRODUCTION Team)
+    </span>
+
+</div>
+            <div class="card-body">
+
+                <!-- MOULD Section -->
+                <div class="mb-4">
+                    <h5 class="font-weight-bold text-decoration-underline">Check Work Order</h5>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="check-wo-rev" name="check-wo-rev" value="Rev">
+                                <label class="form-check-label" for="check-wo-rev">Rev</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="check-wo-material" name="check-wo-material" value="Material">
+                                <label class="form-check-label" for="check-wo-material">Material</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="check-wo-process" name="check-wo-process" value="Process">
+                                <label class="form-check-label" for="check-wo-process">Process</label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- JIG Section -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Check Visual</h5>
+    <div class="row">
+        <div class="col-md-3"> <!-- Increased column size for more spacing -->
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="check-visual-imperfections" name="check-visual-imperfections" value="Tool free of Imperfections">
+                <label class="form-check-label" for="check-visual-imperfections">Tool free of Imperfections</label>
+            </div>
+        </div>
+        <div class="col-md-3"> <!-- Increased column size for more spacing -->
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="check-visual-Parttexture" name="check-visual-Parttexture" value="Suitable Part texture">
+                <label class="form-check-label" for="check-visual-Parttexture">Suitable Part texture</label>
+            </div>
+        </div>
+    </div>
+</div>
+                 <!-- Tooling ready for production Checkbox -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline text-left" for="vacprogram_saved">Has the New Vac Program been Saved?</h5>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="d-flex">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="vacprogram_saved" id="vacprogram_saved_yes" value="yes">
+                    <label class="form-check-label" for="vacprogram_saved_yes">
+                        Yes
+                    </label>
+                </div>
+                <div class="form-check ml-2">
+                    <input class="form-check-input" type="radio" name="vacprogram_saved" id="vacprogram_saved_no" value="no">
+                    <label class="form-check-label" for="vacprogram_saved_no">
+                        No
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Program Name Input Field Below -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Enter the Vac Program Name</h5>
+    <input type="text" class="form-control" id="vac-program-name" name="vac-program-name" placeholder="Enter Vac Program Name">
+</div>
+
+<!-- Cycle Time Fields -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Cycle Time Information</h5>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="required_cycle_time" class="form-label"><strong>Required Cycle Time/Part (sec):</strong></label>
+            <input type="text" class="form-control" id="required_cycle_time" name="required_cycle_time" placeholder="Enter required cycle time">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="achieved_cycle_time" class="form-label"><strong>Cycle Time Achieved/Part (sec):</strong></label>
+            <input type="text" class="form-control" id="achieved_cycle_time" name="achieved_cycle_time" placeholder="Enter achieved cycle time">
+        </div>
+    </div>
+</div>
+
+                <!-- Issues and Suggested Solutions Section -->
+                <div class="mb-4">
+                    <h5 class="font-weight-bold text-decoration-underline">IF NOT FIRST TIME SUCCESS-Issues and Suggested Solutions</h5>
+                    <textarea class="form-control" rows="3" name="issues" id="issues" placeholder="Enter any issues and suggested solutions"></textarea>
+                </div>
+
+                <!-- Suggested Tool Temp Section -->
+                <div class="mb-4">
+                    <h5 class="font-weight-bold text-decoration-underline">Actual Tool Temp (°C)</h5>
+                    <input type="number" class="form-control" name="tool_temp" id="tool_temp" placeholder="Enter temperature in Celsius">
+                </div>
+                <div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Final Checks </h5>
+    <div class="row">
+        <div class="col-md-3"> <!-- Increased column size for more spacing -->
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="final-check-remove" name="final-check-remove" value="Remove Old Programs">
+                <label class="form-check-label" for="final-check-remove">Remove Old Programs</label>
+            </div>
+        </div>
+        <div class="col-md-3"> <!-- Increased column size for more spacing -->
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="final-check-ready" name="final-check-ready" value="Vacuum forming process ready for production">
+                <label class="form-check-label" for="final-check-ready">Vacuum forming process ready for production</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Failure Attempt Dropdown Section -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Failure Attempt</h5>
+    <label for="failure-attempt" class="form-label">Select Failure Attempt</label>
+    <select class="form-select" id="failure-attempt" name="failure-attempt">
+        <option value="" disabled selected>Click here to select the number of attempts</option>
+        <option value="PASSED 1ST ATTEMPT">PASSED 1ST ATTEMPT</option>
+        <option value="1st Time Fail">1st Time Fail</option>
+        <option value="2nd Time Fail">2nd Time Fail</option>
+        <option value="3rd Time Fail">3rd Time Fail</option>
+        <option value="4th Time Fail">4th Time Fail</option>
+        <option value="5th Time Fail">5th Time Fail</option>
+        <option value="5+ Time Fail">More than 5 Time Fail</option>
+    </select>
+</div>
+                                <!-- Program Name Input Field Below -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Total Vac Parts Completed:</h5>
+    <input type="text" class="form-control" id="Vac" name="Vac" placeholder="Enter the Total Vac Parts  Completed e.g.1 or 2">
+</div>
+
+
+<!-- Signed off by Section -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Signed off by</h5>
+    <input type="text" class="form-control" id="sign" name="sign" placeholder=" Enter Operator Name">
+</div>
+
+<!-- Date Section (matching style of Signed off by) -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Date</h5>
+    <input type="date" id="datee" name="datee" class="form-control">
+</div>
+
+
+
+            </div>
+
+        </div>
+
+        <!-- Section 4 -->
+        <div class="card">
+
+            <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-center">
+    <span class="mb-2 mb-md-0 text-center text-md-start">
+        Section 4: TRIMMING (To be filled by PRODUCTION Team)
+    </span>
+
+</div>
+            <div class="card-body">
+
+                 <!-- Tooling ready for production Checkbox -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline text-left" for="tooling-ready">Has the New TRIM Program been Saved?</h5>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="d-flex">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="trim-pgm-saved" id="trim-pgm-saved-yes" value="yes">
+                    <label class="form-check-label" for="trim-pgm-saved-yes">
+                        Yes
+                    </label>
+                </div>
+                <div class="form-check ml-2">
+                    <input class="form-check-input" type="radio" name="trim-pgm-saved" id="trim-pgm-saved-no" value="no">
+                    <label class="form-check-label" for="trim-pgm-saved-no">
+                        No
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Program Name Input Field Below -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Enter the Trim Program Name</h5>
+    <input type="text" class="form-control" id="trim-pgm-name" name="trim-pgm-name" placeholder="Enter Trim Program Name">
+</div>
+
+<!-- Cycle Time Fields -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Cycle Time Information</h5>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="reqd-cycle-time" class="form-label"><strong>Required Cycle Time/Part (secs):</strong></label>
+            <input type="text" class="form-control" id="reqd-cycle-time" name="reqd-cycle-time" placeholder="Enter required cycle time">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="achevd-cycle-time" class="form-label"><strong>Cycle Time Achieved/Part (secs):</strong></label>
+            <input type="text" class="form-control" id="achevd-cycle-time" name="achevd-cycle-time" placeholder="Enter achieved cycle time">
+        </div>
+    </div>
+</div>
+
+                <!-- Issues and Suggested Solutions Section -->
+                <div class="mb-4">
+                    <h5 class="font-weight-bold text-decoration-underline">IF NOT FIRST TIME SUCCESS-Issues and Suggested Solutions</h5>
+                    <textarea class="form-control" rows="3" name="issue" id="issue" placeholder="Enter any issues and suggested solutions"></textarea>
+                </div>
+
+
+                <div class="mb-4">
+
+                    <div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline text-left" for="tooling-ready">Run on?</h5>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="d-flex">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="run-on-ares" id="run-on-ares" value="ARES">
+                    <label class="form-check-label" for="run-on-ares">
+                        ARES
+                    </label>
+                </div>
+                <div class="form-check ml-2">
+                    <input class="form-check-input" type="radio" name="run-on-grimme" id="run-on-grimme" value="GRIMME">
+                    <label class="form-check-label" for="run-on-grimme">
+                        GRIMME
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                    <!-- MOULD Section -->
+                <div class="mb-4">
+                    <h5 class="font-weight-bold text-decoration-underline">Cutter used</h5>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-⌀2" name="cutter-used-⌀2">
+                                <label class="form-check-label" for="cutter-used-⌀2">⌀2</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-⌀3" name="cutter-used-⌀3">
+                                <label class="form-check-label" for="cutter-used-⌀3">⌀3</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-⌀6" name="cutter-used-⌀6">
+                                <label class="form-check-label" for="cutter-used-⌀6">⌀6</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-Upcut" name="cutter-used-Upcut">
+                                <label class="form-check-label" for="cutter-used-Upcut">Upcut</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-Straight" name="cutter-used-Straight">
+                                <label class="form-check-label" for="cutter-used-Straight">Straight</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-Downcut" name="cutter-used-Downcut">
+                                <label class="form-check-label" for="cutter-used-Downcut">Downcut</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-⌀30" name="cutter-used-⌀30">
+                                <label class="form-check-label" for="cutter-used-⌀30">⌀30</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-⌀40" name="cutter-used-⌀40">
+                                <label class="form-check-label" for="cutter-used-⌀40">⌀40</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-⌀50" name="cutter-used-⌀50">
+                                <label class="form-check-label" for="cutter-used-⌀50">⌀50</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-Disk" name="cutter-used-Disk">
+                                <label class="form-check-label" for="cutter-used-Disk">Disk</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cutter-used-Saw" name="cutter-used-Saw">
+                                <label class="form-check-label" for="cutter-used-Saw">Saw</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    <h5 class="font-weight-bold text-decoration-underline">Final Checks </h5>
+    <div class="row">
+        <div class="col-md-3"> <!-- Increased column size for more spacing -->
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="final-check-remov" name="final-check-remov">
+                <label class="form-check-label" for="final-check-remov">Remove Old Programs</label>
+            </div>
+        </div>
+        <div class="col-md-3"> <!-- Increased column size for more spacing -->
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="final-check-readi" name="final-check-readi">
+                <label class="form-check-label" for="final-check-readi">Trimming process ready for production</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Failure Attempt Dropdown Section -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Failure Attempt</h5>
+    <label for="failure-attempts" class="form-label">Select Failure Attempt</label>
+    <select class="form-select" id="failure-attempts" name="failure-attempts">
+        <option value="" disabled selected>Click here to select the number of attempts</option>
+        <option value="PASSED 1ST ATTEMPT">PASSED 1ST ATTEMPT</option>
+        <option value="1st Time Fail">1st Time Fail</option>
+        <option value="2nd Time Fail">2nd Time Fail</option>
+        <option value="3rd Time Fail">3rd Time Fail</option>
+        <option value="4th Time Fail">4th Time Fail</option>
+        <option value="5th Time Fail">5th Time Fail</option>
+        <option value="5+ Time Fail">More than 5 Time Fail</option>
+    </select>
+</div>
+
+
+<!-- Signed off by Section -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Signed off by</h5>
+    <input type="text" class="form-control" id="signatur" name="signatur" placeholder=" Enter Operator Name">
+</div>
+
+                <!-- Program Name Input Field Below -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Total Trim Completed:</h5>
+    <input type="text" class="form-control" id="trim" name="trim" placeholder="Enter the Total Trim Completed">
+</div>
+
+<!-- Date Section (matching style of Signed off by) -->
+<div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Date</h5>
+    <input type="date" id="Dte" name="Dte" class="form-control">
+</div>
+
+
+
+            </div>
+        </div>
+
+
+          <!-- Section 5 -->
+<div class="card">
+   <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-center">
+    <span class="mb-2 mb-md-0 text-center text-md-start">
+        Section 5: AFTER TEST RUN (To be filled by ENGINEERING Team)
+    </span>
+
+</div>
+
+
+
+    <div class="card-body">
+
+        <!-- Issues and Suggested Solutions Section -->
+        <div class="mb-4">
+            <h5 class="font-weight-bold text-decoration-underline" >Description of Changes:</h5>
+            <input type="text" class="form-control" id="descriptionn" name="descriptionn" placeholder="Enter any description of Change or Changes">
+        </div>
+
+        <div class="mb-4">
+    <h5 class="font-weight-bold text-decoration-underline">Dimensional Grid</h5>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Dimensional Grid Ref</th>
+                    <th scope="col">Dimension (mm or Deg)</th>
+                    <th scope="col">Tolerance</th>
+                    <th scope="col">Actual Dimension (mm or Deg)</th>
+                    <th scope="col">Acceptable (Y/N)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 10 Rows -->
+                {% for i in range(10) %}
+                <tr>
+                    <td><input type="text" class="form-control" name="grid_ref_{{ i }}" placeholder="Enter Ref"></td>
+                    <td><input type="text" class="form-control" name="dimension_{{ i }}" placeholder="Enter Dimension"></td>
+                    <td><input type="text" class="form-control" name="tolerance_{{ i }}" placeholder="Enter Tolerance"></td>
+                    <td><input type="text" class="form-control" name="actual_dimension_{{ i }}" placeholder="Enter Actual Dimension"></td>
+                    <td>
+                        <select class="form-select" name="acceptable_{{ i }}">
+                            <option value="" disabled selected>Y/N</option>
+                            <option value="Y">Y</option>
+                            <option value="N">N</option>
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+        <!-- Signed off by Section -->
+        <div class="mb-4">
+            <h5 class="font-weight-bold text-decoration-underline" >Fair Complete: (Engineering/Quality Sign-off)</h5>
+            <input type="text" class="form-control" id="fair_sign" name="fair_sign" placeholder="Enter Engineer Name">
+            <div>.
+
+            </div>
+            <button id="download-btn" class="btn btn-primary">Download Form Data</button>
+
+        </div>
+
+        <!-- Date Section -->
+        <div class="mb-4">
+            <h5 class="font-weight-bold text-decoration-underline" >Date</h5>
+            <input type="date" id="dates" name="dates" class="form-control">
+        </div>
+ <!-- Signed off by Section -->
+        <div class="mb-4">
+            <h5 class="font-weight-bold text-decoration-underline">MRP updated: (Production Sign-off)</h5>
+            <input type="text" class="form-control" id="signatureee" name="signatureee" placeholder="Enter Name">
+        </div>
+
+        <!-- Date Section -->
+        <div class="mb-4">
+            <h5 class="font-weight-bold text-decoration-underline">Date</h5>
+            <input type="date" id="dat" name="dat" class="form-control">
+        </div>
+
+    </div>
+
+
+</div>
+
+</div>
+
+
+ </form>
+
+
+
+
+
+  <!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    // The correct password
+    const correctPassword = "Donite123";
+
+    document.addEventListener("DOMContentLoaded", function () {
+    // Elements
+    const passwordInput = document.getElementById("password-input");
+    const passwordSubmit = document.getElementById("password-submit");
+    const errorMessage = document.getElementById("error-message");
+    const passwordContainer = document.getElementById("password-container");
+    const content = document.getElementById("content");
+
+     // Unlock content on password submission
+    if (passwordSubmit) {
+        passwordSubmit.addEventListener("click", function () {
+            const enteredPassword = passwordInput.value.trim();
+
+            if (enteredPassword === correctPassword) {
+                document.body.classList.remove("locked");
+                document.body.classList.add("unlocked");
+                passwordContainer.style.display = "none";
+                content.style.display = "block";
+            } else {
+                errorMessage.style.display = "block";
+            }
+        });
+    }
+
+
+        // References to buttons and form
+        const newFormBtn = document.getElementById("new-form-btn");
+        const editButton = document.getElementById("edit-section1");
+        const saveButton = document.getElementById("save-section1");
+        const form = document.getElementById("data-form");
+
+        // Get all input and textarea fields
+        const inputs = form.querySelectorAll("input, textarea");
+
+        // Initially, make form fields read-only
+        setReadonly(inputs);
+
+        // Clear Form Button
+        if (newFormBtn) {
+            newFormBtn.addEventListener("click", function () {
+                clearForm(inputs);
+                alert("The form has been cleared.");
+            });
+        }
+
+        // Edit Button
+        if (editButton) {
+            editButton.addEventListener("click", function () {
+                removeReadonly(inputs);
+                alert("You can now edit the fields.");
+            });
+        }
+
+        // Save Button
+        if (saveButton) {
+            saveButton.addEventListener("click", function () {
+                const formData = new FormData(form);
+
+                // Validate required fields
+                if (!validateForm()) return;
+
+                // Submit form data
+                fetch("/save_form", {
+                    method: "POST",
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert("Form data saved successfully!");
+                            form.reset();
+                            setReadonly(inputs);
+                        } else {
+                            alert(`${data.message}`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error saving form:", error);
+                        alert(`Failed to save form data. Error: ${error.message}`);
+                    });
+            });
+        }
+
+       // Handle part number search form submission
+const partNumberForm = document.getElementById("part-number-form");
+if (partNumberForm) {
+    partNumberForm.addEventListener("submit", function (event) {
+        event.preventDefault(); // Prevent the form from refreshing the page
+
+        const partNumber = document.getElementById("part-number-input").value.trim();
+
+        if (!partNumber) {
+            alert("Please enter a part number!");
+            return;
+        }
+
+        // Fetch data based on part number entered
+        fetch(`/search_part?part_number=${encodeURIComponent(partNumber)}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // Debugging: Print the JSON response
+                if (data.success) {
+                    // Display options for the user to select
+                    displayOptions(data.data);
+
+                    // Display all matches if available
+                    if (data.matches && data.matches.length > 0) {
+                        displayMatches(data.matches);
+                    }
+                } else {
+                    alert(data.message);  // Show the error message if part number not found
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching part number data:", error);
+                alert("An error occurred while fetching data.");
+            });
+    });
+}
+
+// Function to normalize strings by removing special characters and extra spaces
+    function normalizeString(str) {
+        return str.replace(/[\s\-\/\.]+/g, '').toLowerCase();
+    }
+
+// Function to display all matches
+function displayMatches(matches) {
+    const matchesContainer = document.getElementById("matches-container");
+    matchesContainer.innerHTML = ""; // Clear previous results
+
+    matches.forEach(match => {
+        const matchElement = document.createElement("div");
+        matchElement.textContent = match;
+        matchesContainer.appendChild(matchElement);
+    });
+}
+    // Helper functions
+    function setReadonly(inputs) {
+        inputs.forEach(input => input.setAttribute("readonly", true));
+    }
+
+    function removeReadonly(inputs) {
+        inputs.forEach(input => input.removeAttribute("readonly"));
+    }
+
+    function clearForm(inputs) {
+        inputs.forEach(input => {
+            if (["text", "date", "number"].includes(input.type)) {
+                input.value = "";
+            }
+            if (["radio", "checkbox"].includes(input.type)) {
+                input.checked = false;
+            }
+        });
+    }
+
+    function validateForm() {
+        const form = document.getElementById("data-form");
+        const requiredFields = form.querySelectorAll("[required]");
+        let isValid = true;
+        requiredFields.forEach(field => {
+            if (!field.value) {
+                isValid = false;
+                alert(`Please fill in the required field: ${field.name}`);
+            }
+        });
+        return isValid;
+    }
+
+    function populateFields(data) {
+        document.getElementById("customer_name").value = data['CUSTOMER NAME'] || '';
+        document.getElementById("wo_number").value = data['WO NUMBER'] || '';
+        document.getElementById("part_number").value = data['PART NUMBER'] || '';
+        document.getElementById("revision_number").value = data['REVISION NUMBER'] || '';
+        document.getElementById("inspected_by").value = data['INSPECTED BY'] || '';
+        document.getElementById("date").value = data['DATE'] || '';  // Ensure date is in YYYY-MM-DD format
+        document.getElementById("part_description").value = data['PART DESCRIPTION'] || '';
+        document.getElementById("issues_and_suggested_solutions").value = data["ISSUES AND SUGGESTED SOLUTIONS"] || '';
+        document.getElementById("suggested_tool_temp").value = data["SUGGESTED TOOL TEMP (°C)"] || '';
+        document.getElementById("signed_off_by").value = data["SIGNED OFF BY"] || '';
+        // Populate MOULD checkboxes
+        const mouldValues = (data["MOULD"] || '').split(',').map(item => item.trim());
+        document.getElementById("mould-base").checked = mouldValues.includes("Base");
+        document.getElementById("mould-vac-former").checked = mouldValues.includes("Vac Former");
+        document.getElementById("mould-vacuum-holes").checked = mouldValues.includes("Vacuum Holes");
+        document.getElementById("mould-clean").checked = mouldValues.includes("Clean");
+        document.getElementById("mould-sealed").checked = mouldValues.includes("Sealed");
+        document.getElementById("mould-temp-control").checked = mouldValues.includes("Temp Control");
+
+        // Populate JIG checkboxes
+        const jigValues = (data["JIG"] || '').split(',').map(item => item.trim());
+        document.getElementById("jig-vacuum").checked = jigValues.includes("Vacuum");
+        document.getElementById("jig-plate-location").checked = jigValues.includes("Plate/Location");
+
+        // Populate Tooling ready for production radio buttons
+        const toolingReady = data["TOOLING READY?"] || '';
+        document.getElementById("yes").checked = toolingReady === "yes";
+        document.getElementById("no").checked = toolingReady === "no";
+
+        // Section 3: FORMING
+        // Populate Check Work Order checkboxes
+        const checkWorkOrderValues = (data["CHECK WO"] || '').split(',').map(item => item.trim());
+        document.getElementById("check-wo-rev").checked = checkWorkOrderValues.includes("Rev");
+        document.getElementById("check-wo-material").checked = checkWorkOrderValues.includes("Material");
+        document.getElementById("check-wo-process").checked = checkWorkOrderValues.includes("Process");
+
+        // Populate Check Visual checkboxes
+        const checkVisualValues = (data["CHECK VISUAL"] || '').split(',').map(item => item.trim());
+        document.getElementById("check-visual-imperfections").checked = checkVisualValues.includes("Tool free of Imperfections");
+        document.getElementById("check-visual-Parttexture").checked = checkVisualValues.includes("Suitable Part Texture");
+
+        // Populate Has the New Vac Program been Saved radio buttons
+        const vacProgramSaved = data["VAC PROGRAM SAVED?"] || '';
+        document.getElementById("vacprogram_saved_yes").checked = vacProgramSaved === "yes";
+        document.getElementById("vacprogram_saved_no").checked = vacProgramSaved === "no";
+
+        // Populate Vac Program Name
+        document.getElementById("vac-program-name").value = data["VAC PROGRAM NAME"] || '';
+
+        // Populate Cycle Time Information
+        document.getElementById("required_cycle_time").value = data["REQUIRED CYCLE TIME/PART (MINS)"] || '';
+        document.getElementById("achieved_cycle_time").value = data["CYCLE TIME ACHEIVED/PART (MINS)"] || '';
+
+        // Populate Issues and Suggested Solutions
+        document.getElementById("issues").value = data["ISSUES"] || '';
+
+        // Populate Actual Tool Temp
+        document.getElementById("tool_temp").value = data["ACTUAL TOOL TEMP (°C)"] || '';
+
+        // Populate Final Checks checkboxes
+        const finalCheckValues = (data["FINAL CHECKS"] || '').split(',').map(item => item.trim());
+        document.getElementById("final-check-remove").checked = finalCheckValues.includes("Remove Old Programs");
+        document.getElementById("final-check-ready").checked = finalCheckValues.includes("Vacuum forming process ready for production");
+
+        // Populate Failure Attempt dropdown
+        document.getElementById("failure-attempt").value = data["FAILURE ATTEMPT"] || '';
+
+        // Populate Signed off by
+        document.getElementById("sign").value = data["SIGNED  BY"] || '';
+
+        // Populate Date
+        document.getElementById("datee").value = data["DATE"] || '';  // Ensure date is in YYYY-MM-DD format
+
+        // Section 4: TRIMMING
+        // Populate Has the New TRIM Program been Saved radio buttons
+        const trimProgramSaved = data["TRIM PGM SAVED?"] || '';
+        document.getElementById("trim-pgm-saved-yes").checked = trimProgramSaved === "yes";
+        document.getElementById("trim-pgm-saved-no").checked = trimProgramSaved === "no";
+
+        // Populate Trim Program Name
+        document.getElementById("trim-pgm-name").value = data["TRIM PGM NAME"] || '';
+
+        // Populate Cycle Time Information
+        document.getElementById("reqd-cycle-time").value = data["REQUIRED CYCLE TIME/PART-MINS"] || '';
+        document.getElementById("achevd-cycle-time").value = data["CYCLE TIME ACHEIVED/PART-MINS"] || '';
+
+        // Populate Issues and Suggested Solutions
+        document.getElementById("issue").value = data["ISSUE"] || '';
+
+        // Populate Run on radio buttons
+        const runOn = data["RUN ON?"] || '';
+        document.getElementById("run-on-ares").checked = runOn === "ARES";
+        document.getElementById("run-on-grimme").checked = runOn === "GRIMME";
+
+        // Populate Cutter used checkboxes
+        const cutterUsedValues = (data["CUTTER USED"] || '').split(',').map(item => item.trim());
+        document.getElementById("cutter-used-⌀2").checked = cutterUsedValues.includes("⌀2");
+        document.getElementById("cutter-used-⌀3").checked = cutterUsedValues.includes("⌀3");
+        document.getElementById("cutter-used-⌀6").checked = cutterUsedValues.includes("⌀6");
+        document.getElementById("cutter-used-Upcut").checked = cutterUsedValues.includes("Upcut");
+        document.getElementById("cutter-used-Straight").checked = cutterUsedValues.includes("Straight");
+        document.getElementById("cutter-used-Downcut").checked = cutterUsedValues.includes("Downcut");
+        document.getElementById("cutter-used-⌀30").checked = cutterUsedValues.includes("⌀30");
+        document.getElementById("cutter-used-⌀40").checked = cutterUsedValues.includes("⌀40");
+        document.getElementById("cutter-used-⌀50").checked = cutterUsedValues.includes("⌀50");
+        document.getElementById("cutter-used-Disk").checked = cutterUsedValues.includes("Disk");
+        document.getElementById("cutter-used-Saw").checked = cutterUsedValues.includes("Saw");
+
+        // Populate Final Checks checkboxes
+        const finalChecksValues = (data["FINAL CHECK"] || '').split(',').map(item => item.trim());
+        document.getElementById("final-check-remov").checked = finalChecksValues.includes("Remove Old Programs");
+        document.getElementById("final-check-readi").checked = finalChecksValues.includes("Trimming process ready for production");
+
+        // Populate Failure Attempt dropdown
+        document.getElementById("failure-attempts").value = data["TOTAL FAILURE ATTEMPT"] || '';
+
+        // Populate Signed off by
+        document.getElementById("signatur").value = data["SIGN  BY"] || '';
+
+        // Populate Date
+        document.getElementById("Dte").value = data["DATE COMPLETED"] || '';  // Ensure date is in YYYY-MM-DD format
+
+
+        //SECTION-5
+         // Populate Description of Changes
+        document.getElementById("descriptionn").value = data['DESCRIPTION'] || '';
+
+        // Populate Dimensional Grid
+        const gridRefs = (data['Dimensional Grid Ref'] || '').split(',');
+        const dimensions = (data['Dimension (mm or Deg)'] || '').split(',');
+        const tolerances = (data['Tolerance'] || '').split(',');
+        const actualDimensions = (data['Actual Dimension (mm or Deg)'] || '').split(',');
+        const acceptables = (data['Acceptable (Y/N)'] || '').split(',');
+
+        for (let i = 0; i < 10; i++) {
+            document.querySelector(`input[name="grid_ref_${i}"]`).value = gridRefs[i] !== 'N/A' ? gridRefs[i] : '';
+            document.querySelector(`input[name="dimension_${i}"]`).value = dimensions[i] !== 'N/A' ? dimensions[i] : '';
+            document.querySelector(`input[name="tolerance_${i}"]`).value = tolerances[i] !== 'N/A' ? tolerances[i] : '';
+            document.querySelector(`input[name="actual_dimension_${i}"]`).value = actualDimensions[i] !== 'N/A' ? actualDimensions[i] : '';
+            document.querySelector(`select[name="acceptable_${i}"]`).value = acceptables[i] !== 'N/A' ? acceptables[i] : '';
+        }
+
+        // Populate Fair Complete (Engineering Sign-off)
+        document.getElementById("fair_sign").value = data['FAIR COMPLETE'] || '';
+
+        // Populate Date
+        document.getElementById("dates").value = data['COMPLETION DATE'] || '';
+
+        // Populate MRP updated (Production Sign-off)
+        document.getElementById("signatureee").value = data['PRODUCTION SIGN OFF'] || '';
+
+        // Populate Date
+        document.getElementById("dat").value = data['DATE-'] || '';
+
+        //extra info
+        document.getElementById("failure-attemptt").value = data["FAIL-SECTION 2"] || '';
+        document.getElementById("da").value = data["TOOLING DATE"] || '';
+        document.getElementById("tool").value = data["TOTAL TOOLING"] || '';
+        document.getElementById("trim").value = data["TOTAL TRIM COMPLETED"] || '';
+        document.getElementById("Vac").value = data["TOTAL VAC COMPLETED"] || '';
+}
+function collectFormData() {
+    const getValue = (selector) => {
+        const element = document.querySelector(selector);
+        return element ? element.value : '';
+    };
+
+    const data = {
+        'Customer Name': getValue('#customer_name'),
+        'Part Number': getValue('#part_number'),
+        'Inspected By': getValue('#inspected_by'),
+        'Part Description': getValue('#part_description'),
+        'WO Number': getValue('#wo_number'),
+        'Revision Number': getValue('#revision_number'),
+        'Date - Section 1': getValue('#date'),
+        'TRIM Program Saved': document.querySelector('input[name="trim-pgm-saved"]:checked') ? document.querySelector('input[name="trim-pgm-saved"]:checked').value : '',
+        'Trim Program Name': getValue('#trim-pgm-name'),
+        'Required Cycle Time/Part (mins)': getValue('#reqd-cycle-time'),
+        'Cycle Time Achieved/Part (mins)': getValue('#achevd-cycle-time'),
+        'Issues and Suggested Solutions': getValue('#issue'),
+        'Run on': document.querySelector('input[name="run-on-ares"]').checked ? 'ARES' : (document.querySelector('input[name="run-on-grimme"]').checked ? 'GRIMME' : ''),
+        'Cutter used': Array.from(document.querySelectorAll('input[name^="cutter-used"]:checked')).map(el => el.nextElementSibling.textContent).join(', '),
+        'Failure Attempt': getValue('#failure-attempts'),
+        'Signed off by': getValue('#signatur'),
+        'Date': getValue('#Dte'),
+        'DESCRIPTION OF CHANGES': getValue('#descriptionn'),
+        'Dimensional Grid Ref': Array.from({ length: 10 }, (_, i) => getValue(`input[name="grid_ref_${i}"]`)),
+        'Dimension (mm or Deg)': Array.from({ length: 10 }, (_, i) => getValue(`input[name="dimension_${i}"]`)),
+        'Tolerance': Array.from({ length: 10 }, (_, i) => getValue(`input[name="tolerance_${i}"]`)),
+        'Actual Dimension (mm or Deg)': Array.from({ length: 10 }, (_, i) => getValue(`input[name="actual_dimension_${i}"]`)),
+        'Acceptable (Y/N)': Array.from({ length: 10 }, (_, i) => getValue(`select[name="acceptable_${i}"]`)),
+        'FAIR SIGN': getValue('#fair_sign'),
+        'DATES': getValue('#dates'),
+        'SIGNATURE': getValue('#signaturee'),
+        'DATE': getValue('#dat'),
+        'Check Work Order': Array.from(document.querySelectorAll('input[name^="check-wo"]:checked')).map(el => el.nextElementSibling.textContent).join(', '),
+        'Check Visual': Array.from(document.querySelectorAll('input[name^="check-visual"]:checked')).map(el => el.nextElementSibling.textContent).join(', '),
+        'Vac Program Saved': document.querySelector('input[name="vacprogram_saved"]:checked') ? document.querySelector('input[name="vacprogram_saved"]:checked').value : '',
+        'Vac Program Name': getValue('#vac-program-name'),
+        'Required Cycle Time/Part (mins) - Section 3': getValue('#required_cycle_time'),
+        'Cycle Time Achieved/Part (mins) - Section 3': getValue('#achieved_cycle_time'),
+        'Issues and Suggested Solutions - Section 3': getValue('#issues'),
+        'Actual Tool Temp (°C)': getValue('#tool_temp'),
+        'Final Checks - Section 3': Array.from(document.querySelectorAll('input[name^="final-check"]:checked')).map(el => el.nextElementSibling.textContent).join(', '),
+        'Failure Attempt - Section 3': getValue('#failure-attempt'),
+        'Signed off by - Section 3': getValue('#sign'),
+        'Date - Section 3': getValue('#datee'),
+        'Mould Checks': Array.from(document.querySelectorAll('input[name^="mould-"]:checked')).map(el => el.nextElementSibling.textContent).join(', '),
+        'Jig Checks': Array.from(document.querySelectorAll('input[name^="jig-"]:checked')).map(el => el.nextElementSibling.textContent).join(', '),
+        'Issues and Suggested Solutions - Section 2': getValue('#issues_and_suggested_solutions'),
+        'Suggested Tool Temp (°C)': getValue('#suggested_tool_temp'),
+        'Tooling Ready for Production': document.querySelector('input[name="tooling_ready"]:checked') ? document.querySelector('input[name="tooling_ready"]:checked').value : '',
+        'Signed off by - Section 2': getValue('#signed_off_by'),
+        'SIGNATUREE': getValue('#signatureee'),
+        'DA': getValue('#dat'),
+    };
+    return data;
+}
+
+function addBackground(doc) {
+    // Add background color
+    doc.setFillColor(240, 240, 240);
+    doc.rect(0, 0, doc.internal.pageSize.width, doc.internal.pageSize.height, 'F');
+
+    // Add header
+    doc.setFontSize(20);
+    doc.setTextColor(0, 51, 102);
+    doc.setFont(undefined, 'bold');
+    doc.text('PRODUCTION PART APPROVAL REPORT', 10, 20);
+}
+
+function generatePDF(data) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Function to add the logo to each page
+    function addLogo(doc) {
+        const imgData = "{{ url_for('static', filename='images/company logo.jpg') }}"; // Replace with your logo's base64 string
+        doc.addImage(imgData, 'PNG', 152, 14, 55, 18); // Adjust the position and size as needed
+    }
+
+     // Function to add a footer to each page
+    function addFooter(doc) {
+        doc.setFontSize(10);
+        doc.text('Donite Plastics - Confidential', doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    }
+
+    // Function to add a watermark to each page
+    function addWatermark(doc) {
+        doc.setFontSize(50);
+        doc.setTextColor(150, 150, 150);
+        doc.text('CONFIDENTIAL', doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() / 2, { align: 'center', angle: 35 });
+    }
+
+    // Add background to the first page
+    addBackground(doc);
+    addLogo(doc);
+    addFooter(doc);
+    addWatermark(doc);
+
+
+    //Section 1
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'bold');
+    doc.text('Section 1: General Information', 10, 30);
+    doc.setFont(undefined, 'normal');
+
+    doc.setFontSize(12);
+    doc.text('1. Customer Name:', 10, 40);
+    doc.text(data['Customer Name'], 10, 50);
+
+    doc.setFontSize(12);
+    doc.text('2. Part Number:', 10, 60);
+    doc.text(data['Part Number'], 10, 70);
+
+    doc.setFontSize(12);
+    doc.text('3. Inspected By:', 10, 80);
+    doc.text(data['Inspected By'], 10, 90);
+
+    doc.setFontSize(12);
+    doc.text('4. Part Description:', 10, 100);
+    doc.text(data['Part Description'], 10, 110);
+
+    doc.setFontSize(12);
+    doc.text('5. WO Number:', 10, 120);
+    doc.text(data['WO Number'], 10, 130);
+
+    doc.setFontSize(12);
+    doc.text('6. Revision Number:', 10, 140);
+    doc.text(data['Revision Number'], 10, 150);
+
+    doc.setFontSize(12);
+    doc.text('7. Date:', 10, 160);
+    doc.text(data['Date - Section 1'], 10, 170);
+
+
+     // Add a new page for Section 2
+    doc.addPage();
+
+    // Add background to the new page
+    addBackground(doc);
+    addLogo(doc);
+    addFooter(doc);
+    addWatermark(doc);
+
+
+    // Section 2
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'bold');
+    doc.text('Section 2: Quality Checks (Done by Engg Team)', 10, 30);
+    doc.setFont(undefined, 'normal');
+
+    doc.setFontSize(12);
+    doc.text('1. Mould Checks:', 10, 40);
+    doc.text(data['Mould Checks'], 10, 50);
+
+    doc.text('2. Jig Checks:', 10, 60);
+    doc.text(data['Jig Checks'], 10, 70);
+
+    doc.text('3. Issues and Suggested Solutions:', 10, 80);
+    doc.text(data['Issues and Suggested Solutions - Section 2'], 10, 90);
+
+    doc.text('4. Suggested Tool Temp (°C):', 10, 100);
+    doc.text(data['Suggested Tool Temp (°C)'], 10, 110);
+
+    doc.text('5. Is the Tooling ready for production?:', 10, 120);
+    doc.text(data['Tooling Ready for Production'], 10, 130);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('Signed off by:', 10, 140);
+    doc.setFont(undefined, 'normal');
+    doc.text(data['Signed off by - Section 2'], 10, 150);
+
+    // Add a new page for Section 3
+    doc.addPage();
+
+    // Add background to the new page
+    addBackground(doc);
+    addLogo(doc);
+    addFooter(doc);
+    addWatermark(doc);
+
+
+    // Section 3
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'bold');
+    doc.text('Section 3: FORMING (Done by PROD. Team)', 10, 30);
+    doc.setFont(undefined, 'normal');
+
+    doc.setFontSize(12);
+    doc.text('1. Check Work Order:', 10, 40);
+    doc.text(data['Check Work Order'], 10, 50);
+
+    doc.text('2. Check Visual:', 10, 60);
+    doc.text(data['Check Visual'], 10, 70);
+
+    doc.text('3. Has the New Vac Program been Saved?:', 10, 80);
+    doc.text(data['Vac Program Saved'], 10, 90);
+
+    doc.text('4. Enter the Vac Program Name:', 10, 100);
+    doc.text(data['Vac Program Name'], 10, 110);
+
+    doc.text('5. CYCLE TIME INFORMATION:', 10, 120);
+    doc.text('\tRequired Cycle Time/Part (mins):', 10, 130);
+    doc.text(data['Required Cycle Time/Part (mins) - Section 3'], 150, 130);
+    doc.text('\tCycle Time Achieved/Part (mins):', 10, 140);
+    doc.text(data['Cycle Time Achieved/Part (mins) - Section 3'], 150, 140);
+
+    doc.text('6. IF NOT FIRST TIME SUCCESS - Issues and Suggested Solutions:', 10, 150);
+    doc.text(data['Issues and Suggested Solutions - Section 3'], 10, 160);
+
+    doc.text('7. Actual Tool Temp (°C):', 10, 170);
+    doc.text(data['Actual Tool Temp (°C)'], 10, 180);
+
+    doc.text('8. Final Checks:', 10, 190);
+    doc.text(data['Final Checks - Section 3'], 10, 200);
+
+    doc.text('9. Failure Attempt:', 10, 210);
+    doc.text(data['Failure Attempt - Section 3'], 10, 220);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('Signed off by:', 10, 230);
+    doc.setFont(undefined, 'normal');
+    doc.text(data['Signed off by - Section 3'], 10, 240);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('Date:', 10, 250);
+    doc.setFont(undefined, 'normal');
+    doc.text(data['Date - Section 3'], 10, 260);
+
+    // Add a new page for Section 4
+    doc.addPage();
+
+    // Add background to the new page
+    addBackground(doc);
+    addLogo(doc);
+    addFooter(doc);
+    addWatermark(doc);
+
+
+    // Section 4
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'bold');
+    doc.text('Section 4: TRIMMING (Done by PROD. Team)', 10, 30);
+    doc.setFont(undefined, 'normal');
+
+    doc.setFontSize(12);
+    doc.text('1. Has the New TRIM Program been Saved?:', 10, 40);
+    doc.text(data['TRIM Program Saved'], 10, 50);
+
+    doc.text('2. Enter the Trim Program Name:', 10, 60);
+    doc.text(data['Trim Program Name'], 10, 70);
+
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
+    doc.text('3. CYCLE TIME INFORMATION:', 10, 80);
+    doc.setFont(undefined, 'normal');
+    doc.text('\tRequired Cycle Time/Part (mins):', 10, 90);
+    doc.text(data['Required Cycle Time/Part (mins)'], 150, 90);
+    doc.text('\tCycle Time Achieved/Part (mins):', 10, 100);
+    doc.text(data['Cycle Time Achieved/Part (mins)'], 150, 100);
+
+    doc.text('4. Issues and Suggested Solutions:', 10, 110);
+    doc.text(data['Issues and Suggested Solutions'], 10, 120);
+
+    doc.text('5. Run on:', 10, 130);
+    doc.text(data['Run on'], 10, 140);
+
+    doc.text('6. Cutter used:', 10, 150);
+    const cutterUsedLines = doc.splitTextToSize(data['Cutter used'], 180); // Adjusted width to prevent crossing the edge
+    cutterUsedLines.forEach((line, index) => {
+        doc.text(line, 10, 160 + index * 10);
+    });
+
+    doc.text('7. Failure Attempt:', 10, 160 + cutterUsedLines.length * 10 + 10);
+    doc.text(data['Failure Attempt'], 10, 160 + cutterUsedLines.length * 10 + 20);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('Signed off by:', 10, 160 + cutterUsedLines.length * 10 + 30);
+    doc.setFont(undefined, 'normal');
+    doc.text(data['Signed off by'], 10, 160 + cutterUsedLines.length * 10 + 40);
+
+    doc.setFont(undefined, 'bold');
+    doc.text('Date:', 10, 160 + cutterUsedLines.length * 10 + 50);
+    doc.setFont(undefined, 'normal');
+    doc.text(data['Date'], 10, 160 + cutterUsedLines.length * 10 + 60);
+
+    // Add a new page for Section 5
+    doc.addPage();
+
+    // Add background to the new page
+    addBackground(doc);
+    addLogo(doc);
+    addFooter(doc);
+    addWatermark(doc);
+
+
+    // Section 5
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'bold');
+    doc.text('Section 5: AFTER TEST (Done by ENGG. Team)', 10, 30);
+    doc.setFont(undefined, 'normal');
+
+    doc.setFontSize(12);
+    doc.text('1. Description of Changes:', 10, 40);
+    doc.text(data['DESCRIPTION OF CHANGES'], 10, 50);
+
+    let y = 60;
+    doc.text('2. Dimensional Grid:', 10, y);
+    y += 10;
+
+    const tableData = [];
+    for (let i = 0; i < 10; i++) {
+        tableData.push([
+            i + 1,
+            data['Dimensional Grid Ref'][i],
+            data['Dimension (mm or Deg)'][i],
+            data['Tolerance'][i],
+            data['Actual Dimension (mm or Deg)'][i],
+            data['Acceptable (Y/N)'][i]
+        ]);
+    }
+
+    doc.autoTable({
+        startY: y,
+        head: [['Index', 'Dimensional Grid Ref', 'Dimension (mm or Deg)', 'Tolerance', 'Actual Dimension (mm or Deg)', 'Acceptable (Y/N)']],
+        body: tableData
+    });
+
+    y = doc.lastAutoTable.finalY + 20;
+    doc.text('Fair Complete (Engineering Sign-off):', 10, y);
+    doc.text(data['FAIR SIGN'], 150, y);
+
+    y += 10;
+    doc.text('Date:', 10, y);
+    doc.text(data['DATES'], 150, y);
+
+    y += 20;
+    doc.text('MRP updated (Production Sign-off):', 10, y);
+    doc.text(data['SIGNATUREE'], 150, y);
+
+    y += 10;
+    doc.text('Date:', 10, y);
+    doc.text(data['DA'], 150, y);
+
+    doc.save('PPAR.pdf');
+}
+document.getElementById('download-btn').addEventListener('click', (event) => {
+    event.preventDefault(); // Prevent form resubmission
+    const formData = collectFormData();
+    generatePDF(formData);
+});
+    function displayOptions(options) {
+        const optionsContainer = document.getElementById("options-container");
+        optionsContainer.innerHTML = ""; // Clear previous options
+
+        options.forEach((option, index) => {
+            const optionButton = document.createElement("button");
+            optionButton.textContent = `Form ${index + 1}`;
+            optionButton.classList.add("btn", "btn-primary", "m-2");
+            optionButton.addEventListener("click", () => populateFields(option));
+            optionsContainer.appendChild(optionButton);
+        });
+    }
+});
+</script>
+</div>
+    </div>
+     <!-- Password Prompt -->
+    <div id="password-container" class="password-prompt">
+       <h2 class="text-center" style="font-family: 'Arial', sans-serif; color: #333; margin-top: 20px;">This page is protected. Please enter the password to access.</h2>
+        <input type="password" id="password-input" placeholder="Enter password">
+        <button id="password-submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 16px; border-radius: 5px;">Submit</button>
+        <p id="error-message" style="color: red; display: none;">Incorrect password. Try again.</p>
+    </div>
+   </body>
+</html>

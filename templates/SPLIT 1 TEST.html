@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mould Tool Management</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+</head>
+
+<body>
+   <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+        <!-- Brand with Icon -->
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-tools me-2"></i> <!-- Icon with some spacing -->
+            Mould Tool Management System
+        </a>
+        <!-- Toggler Button -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <!-- Navigation Links -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link scroll-to-section" href="/">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link scroll-to-section" href="/STOCKCHECK">Stock Check</a></li>
+                <li class="nav-item"><a class="nav-link scroll-to-section" href="/PPAR">PPAR</a></li>
+                <li class="nav-item"><a class="nav-link scroll-to-section" href="/view_tools">View Mould tools</a></li>
+                <li class="nav-item"><a class="nav-link scroll-to-section" href="/data_extractor">Data Extractor</a></li>
+
+            </ul>
+            <button id="clear-db-btn" class="btn btn-danger" style="width: 200px; font-size: 16px;">Clear Database</button>
+        </div>
+    </div>
+</nav>
+
+
+   <section id="dashboard">
+    <div class="container py-5 text-white" style="background: rgba(0, 0, 0, 0.7); border-radius: 15px;">
+        <h2 class="section-title text-white text-center mb-4">Dashboard</h2>
+        <div class="row text-center">
+            <div class="col-lg-4 col-md-6 col-12 mb-4">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <i class="fas fa-cubes mb-3"></i>
+                        <h5>Total Moulds</h5>
+                        <p style="font-size: 2rem; margin: 0;">123</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 col-12 mb-4">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <i class="fas fa-plus-circle mb-3"></i>
+                        <h5>Recently Added</h5>
+                        <p style="margin: 0;">Mould #101, Mould #102</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 col-12 mb-4">
+                <div class="card bg-warning text-dark h-100">
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <i class="fas fa-chart-bar mb-3"></i>
+                        <h5>Status Overview</h5>
+                        <p style="margin: 0;">In Use: 50 | Available: 53</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+
+
+<!-- SAVE/SEARCH/EDIT/DELETE A TOOL -->
+<section id="search-filter">
+    <div class="container">
+        <h2 class="section-title">SAVE/SEARCH/EDIT/DELETE A TOOL</h2>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="/save_tool">
+                    <div class="row mb-3">
+                        <!-- Mould Tool Number -->
+                        <div class="col-md-4">
+                            <label for="searchNumber" class="form-label">Mould Tool Number</label>
+                            <input type="text" class="form-control" id="searchNumber" name="tool_number" required>
+                        </div>
+
+                        <!-- Location -->
+                        <div class="col-md-4">
+                            <label for="searchLocation" class="form-label">Tool Location</label>
+                            <input type="text" class="form-control" id="searchLocation" name="tool_location" required>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="col-md-4">
+                            <label for="searchStatus" class="form-label">Status</label>
+                            <select class="form-select" id="searchStatus" name="status">
+                                <option value="All">All</option>
+                                <option value="In Use">In Use</option>
+                                <option value="Available">Available</option>
+                                <option value="Returned">Returned</option>
+                                <option value="Under Maintenance">Under Maintenance</option>
+                            </select>
+                        </div>
+
+                        <!-- Jig Number -->
+                        <div class="col-md-4 mt-3">
+                            <label for="searchJigNumber" class="form-label">Jig Number</label>
+                            <input type="text" class="form-control" id="searchJigNumber" name="jig_number">
+                        </div>
+
+                        <!-- Jig Location -->
+                        <div class="col-md-4 mt-3">
+                            <label for="searchJigLocation" class="form-label">Jig Location</label>
+                            <input type="text" class="form-control" id="searchJigLocation" name="jig_location">
+                        </div>
+
+                        <!-- Company Name/Code -->
+                        <div class="col-md-4 mt-3">
+                            <label for="searchCompany" class="form-label">Company Name/Code</label>
+                            <input type="text" class="form-control" id="searchCompany" name="company_name_code">
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between mt-3">
+                        <div>
+<button type="button" class="btn btn-primary" onclick="saveTool()">Save</button>
+                            <button type="button" id="searchButton" class="btn btn-primary" onclick="searchTool()">Search</button>
+                        </div>
+
+
+                    </div>
+                </form>
+                <div id="searchResults">
+                    <!-- Search results will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<section id="stock-check" style="background-color: #343a40; padding: 50px 0;">
+    <div class="container">
+        <!-- Section Title -->
+        <h2 class="section-title text-center mb-4" style="
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 2.5rem;
+            line-height: 1.3;">
+            ADD MOULD TOOLS IN BATCH BY SCANNING THE NEWLY PLACED RFID TAGS
+        </h2>
+        <!-- Card -->
+        <div class="card shadow-sm border-0">
+            <!-- Card Header (White Background, Black Text) -->
+            <div class="card-header" style="background-color: #ffffff; color: #000000;">
+                <h5 class="mb-0" style="font-weight: 600;">Scan Mould Tools</h5>
+            </div>
+            <!-- Card Body -->
+            <div class="card-body">
+                <p style="color: #6c757d; font-size: 1rem;">
+                    Scan mould tools using an RFID reader to add them
+                </p>
+                <!-- Scanned Tools Textarea -->
+                <div class="mb-4">
+                    <label for="scannedToolsStockCheck" class="form-label fw-semibold">Scanned Tools:</label>
+                    <textarea id="scannedToolsStockCheck" class="form-control" rows="6" placeholder="Enter scanned tool numbers, separated by commas or new lines"></textarea>
+                </div>
+                <!-- Left-Aligned Verify Stock Button -->
+                <div>
+                    <button id="verifyStockBtn" class="btn btn-primary" style="padding: 10px 30px; font-size: 1rem;">
+                        Add tools
+                    </button>
+                </div>
+                <!-- Result Container -->
+                <div id="stockCheckResult" class="mt-4 p-3 border rounded" style="background-color: #e9ecef; min-height: 50px;">
+                    <!-- Result will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+    <footer>
+        <p>&copy; 2024 Mould Management System. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    let currentEditId = null; // Store the ID of the tool currently being edited
+
+    function searchTool() {
+    var formData = new FormData(document.querySelector('form'));
+    fetch("/search_tools", {
+        method: "POST",
+        body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+        var table = "<table class='table table-striped'><thead><tr><th>Tool No.</th><th>Bin</th><th>Status</th><th>Jig No.</th><th>Bin</th><th>Company Code</th><th>Action</th></tr></thead><tbody>";
+        data.tools.forEach(tool => {
+            table += "<tr id='tool-" + tool.id + "'>";
+            table += "<td><span id='tool-number-" + tool.id + "'>" + tool.tool_number + "</span><input type='text' id='tool-number-input-" + tool.id + "' value='" + tool.tool_number + "' class='form-control' style='display:none'></td>";
+            table += "<td><span id='tool-location-" + tool.id + "'>" + tool.tool_location + "</span><input type='text' id='tool-location-input-" + tool.id + "' value='" + tool.tool_location + "' class='form-control' style='display:none'></td>";
+            table += "<td><span id='status-" + tool.id + "'>" + tool.status + "</span><select id='status-input-" + tool.id + "' class='form-select' style='display:none'><option>In Use</option><option>Available</option><option>Returned</option><option>Under Maintenance</option></select></td>";
+            table += "<td><span id='jig-number-" + tool.id + "'>" + tool.jig_number + "</span><input type='text' id='jig-number-input-" + tool.id + "' value='" + tool.jig_number + "' class='form-control' style='display:none'></td>";
+            table += "<td><span id='jig-location-" + tool.id + "'>" + tool.jig_location + "</span><input type='text' id='jig-location-input-" + tool.id + "' value='" + tool.jig_location + "' class='form-control' style='display:none'></td>";
+            table += "<td><span id='company-name-code-" + tool.id + "'>" + tool.company_name_code + "</span><input type='text' id='company-name-code-input-" + tool.id + "' value='" + tool.company_name_code + "' class='form-control' style='display:none'></td>"; // Add this line to display company code
+            table += "<td><div class='btn-group' role='group'><button class='btn btn-warning btn-sm' onclick='editTool(" + tool.id + ")'>Edit</button><button class='btn btn-danger btn-sm' onclick='deleteTool(" + tool.id + ")'>Delete</button><button class='btn btn-success btn-sm' onclick='saveChanges(" + tool.id + ")' style='display:none'>Save Changes</button></div></td>";
+            table += "</tr>";
+        });
+        table += "</tbody></table>";
+        document.getElementById("searchResults").innerHTML = table;
+    });
+}
+
+    // Edit the tool: make rows editable
+    function editTool(id) {
+        currentEditId = id;
+        // Toggle visibility of spans and inputs for the row
+        toggleEditableRow(id, true);
+        // Show the Save Changes button
+        document.querySelector(`#tool-${id} .btn-success`).style.display = 'inline-block';
+    }
+
+    // Delete the tool: remove from the database
+    function deleteTool(id) {
+        fetch(`/delete_tool/${id}`, {
+            method: "DELETE",
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            searchTool(); // Refresh the search results
+        });
+    }
+
+   function saveChanges(id) {
+    const toolNumber = document.getElementById(`tool-number-input-${id}`).value;
+    const toolLocation = document.getElementById(`tool-location-input-${id}`).value;
+    const status = document.getElementById(`status-input-${id}`).value;
+    const jigNumber = document.getElementById(`jig-number-input-${id}`).value;
+    const jigLocation = document.getElementById(`jig-location-input-${id}`).value;
+    const companyNameCode = document.getElementById(`company-name-code-input-${id}`).value;  // Get the company code
+
+    fetch(`/update_tool/${id}`, {
+        method: "POST",
+        body: JSON.stringify({
+            tool_number: toolNumber,
+            tool_location: toolLocation,
+            status: status,
+            jig_number: jigNumber,
+            jig_location: jigLocation,
+            company_name_code: companyNameCode  // Send the company code
+        }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        searchTool(); // Refresh the search results
+    });
+}
+
+
+    // Toggle the visibility of the span/input for the given row
+    function toggleEditableRow(id, isEditable) {
+        document.getElementById(`tool-number-${id}`).style.display = isEditable ? 'none' : 'inline';
+        document.getElementById(`tool-location-${id}`).style.display = isEditable ? 'none' : 'inline';
+        document.getElementById(`status-${id}`).style.display = isEditable ? 'none' : 'inline';
+        document.getElementById(`jig-number-${id}`).style.display = isEditable ? 'none' : 'inline';
+        document.getElementById(`jig-location-${id}`).style.display = isEditable ? 'none' : 'inline';
+
+        document.getElementById(`tool-number-input-${id}`).style.display = isEditable ? 'inline' : 'none';
+        document.getElementById(`tool-location-input-${id}`).style.display = isEditable ? 'inline' : 'none';
+        document.getElementById(`status-input-${id}`).style.display = isEditable ? 'inline' : 'none';
+        document.getElementById(`jig-number-input-${id}`).style.display = isEditable ? 'inline' : 'none';
+        document.getElementById(`jig-location-input-${id}`).style.display = isEditable ? 'inline' : 'none';
+    }
+    // Update your saveTool function to handle errors from the backend
+   function saveTool() {
+    const formData = new FormData(document.querySelector('form'));
+
+    fetch("/save_tool", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Check if the response contains a success message
+        if (data.status === 'success') {
+            // Create a success message div
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('alert', 'alert-success');
+            messageDiv.innerText = data.message;  // "Tool has been saved successfully!"
+
+            // Append the success message to the form
+            const form = document.querySelector('form');
+            form.insertAdjacentElement('afterend', messageDiv);
+
+            // Optionally, clear the form if needed
+            form.reset();
+        } else {
+            // Handle error responses here if necessary
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+    console.error("Error:", error);
+    alert("Tool Saved Successfully!.");
+});
+
+}
+  // Predefined password (you can modify this or fetch it securely from server-side)
+        const correctPassword = 'Infy@123'; // Change this to your desired password
+
+        // JavaScript to send a POST request when the button is clicked
+        document.getElementById('clear-db-btn').addEventListener('click', function() {
+            // Ask for password before proceeding
+            const password = prompt("Please enter the password to clear the database:");
+
+            // Check if the entered password is correct
+            if (password === correctPassword) {
+                // If password matches, send the POST request
+                fetch('/clear_db', {
+                    method: 'POST',  // HTTP method
+                    headers: {
+                        'Content-Type': 'application/json',  // Set the content type to JSON
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Alert the user with the response message
+                    alert(data.message || data.error);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Something went wrong!');
+                });
+            } else {
+                // If the password is incorrect, alert the user
+                alert('Incorrect password. Database was not cleared.');
+            }
+        });
+    </script>
+
+    <!-- Add Bootstrap JS (optional for using interactive components) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+</script>
+<!-- Table for displaying search results -->
+<div id="searchResults"></div>
+
+
+
+</body>
+
+</html>

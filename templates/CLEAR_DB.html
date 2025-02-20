@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Database</title>
+</head>
+<body>
+
+    <h1>Clear Database</h1>
+    <button id="clear-db-btn">Clear Database</button>
+
+    <script>
+        // JavaScript to send a POST request when the button is clicked
+        document.getElementById('clear-db-btn').addEventListener('click', function() {
+            fetch('/clear_db', {
+                method: 'POST',  // HTTP method
+                headers: {
+                    'Content-Type': 'application/json',  // Set the content type to JSON
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Alert the user with the response message
+                alert(data.message || data.error);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Something went wrong!');
+            });
+        });
+    </script>
+
+</body>
+</html>

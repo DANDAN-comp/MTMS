@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Extraction Tool</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #1c1c1c, #444);
+      color: white;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    header {
+      font-size: 32px;
+      font-weight: bold;
+      text-align: center;
+      padding: 20px;
+    }
+    .upload-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    label {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    label:hover {
+      background-color: #0056b3;
+    }
+    .table-container {
+      width: 90%;
+      margin: 50px auto;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      color: black;
+      border: 2px solid black;
+    }
+    th, td {
+      padding: 12px;
+      border: 2px solid black;
+      text-align: left;
+    }
+    th {
+      background: #e0e0e0;
+      color: black;
+      font-weight: bold;
+    }
+    tbody tr:nth-child(even) {
+      background: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+
+<header>DATA EXTRACTION TOOL</header>
+
+<div class="upload-container">
+  <input type="file" id="pdf-upload" accept="application/pdf" multiple>
+  <label for="pdf-upload">Upload PDF/PDF's</label>
+  <label id="save-data" >Save Data</label>
+  <label id="delete-selected">Delete Selected</label>
+
+
+</div>
+
+<div class="table-container">
+  <h2>Extracted Data</h2>
+  <table id="pdf-table">
+    <thead>
+      <tr>
+        <th>Action</th>
+        <th>Advice Note <i class="fa fa-copy" onclick="copyColumn(1)"></i></th>
+        <th>WO Ref. <i class="fa fa-copy" onclick="copyColumn(2)"></i></th>
+        <th>Part No. <i class="fa fa-copy" onclick="copyColumn(3)"></i></th>
+        <th>Qty Shipped <i class="fa fa-copy" onclick="copyColumn(4)"></i></th>
+        <th>Expected Receipt <i class="fa fa-copy" onclick="copyColumn(5)"></i></th>
+        <th>Purchase Ref. <i class="fa fa-copy" onclick="copyColumn(6)"></i></th>
+        <th>Price from Advice Note <i class="fa fa-copy" onclick="copyColumn(7)"></i></th>
+        <th>Price from Donite Spreadsheet <i class="fa fa-copy" onclick="copyColumn(8)"></i></th>
+        <th>Part Issue <i class="fa fa-copy" onclick="copyColumn(9)"></i></th>
+        <th>Material <i class="fa fa-copy" onclick="copyColumn(10)"></i></th>
+        <th>Qty sheets sent <i class="fa fa-copy" onclick="copyColumn(11)"></i></th>
+        <th>Description <i class="fa fa-copy" onclick="copyColumn(12)"></i></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="13" style="text-align: center;">No data extracted yet</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+document.getElementById("pdf-upload").addEventListener("change", debounce(handleFileUpload, 300));
+document.getElementById("save-data").addEventListener("click", saveTableData);
+
+// Fetch and display saved data when the page loads
+window.onload = fetchSavedData;
+
+async function fetchSavedData() {
+  try {
+    const response = await fetch('/get_saved_data');
+    const data = await response.json();
+    const tableBody = document.querySelector("#pdf-table tbody");
+    tableBody.innerHTML = "";
+
+    if (data.length > 0) {
+      data.forEach(rowData => {
+        const row = createTableRow(rowData);
+        tableBody.innerHTML += row;
+      });
+    } else {
+      tableBody.innerHTML = `<tr><td colspan="13" style="text-align: center;">No data extracted yet</td></tr>`;
+    }
+  } catch (error) {
+    console.error("Error fetching saved data:", error);
+    alert("An error occurred while fetching the saved data.");
+  }
+}
+
+async function handleFileUpload(event) {
+  const files = event.target.files;
+  for (const file of files) {
+    if (file.type === "application/pdf") {
+      try {
+        const typedarray = await readFileAsArrayBuffer(file);
+        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+        const page = await pdf.getPage(1);
+        const textContent = await page.getTextContent();
+        const extractedText = textContent.items.map(item => item.str).join(" ");
+        await processPDFData(extractedText);
+      } catch (error) {
+        console.error("Error processing PDF:", error);
+        alert("An error occurred while processing the PDF file.");
+      }
+    } else {
+      alert("Please upload a valid PDF file.");
+    }
+  }
+}
+
+// Helper function to remove trailing alphabetical characters from the part number
+function cleanPartNo(partNo) {
+  // This regex removes a hyphen followed by one or more letters at the end of the string.
+  return partNo.replace(/-([A-Za-z]+)$/, '');
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+function readFileAsArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(new Uint8Array(reader.result));
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function processPDFData(text) {
+  const tableBody = document.querySelector("#pdf-table tbody");
+
+  // Remove the initial row if it exists
+  const initialRow = tableBody.querySelector("tr td[colspan='13']");
+  if (initialRow) {
+    tableBody.removeChild(initialRow.parentNode);
+  }
+
+  const patterns = {
+    "Advice Note": /Advice\s*Note\s*(AN\/\d+)/i,
+    "WO Ref.": /WO\s*Ref\.\s*(TW\/\d+)(?:\/A-\d+)?/i,
+    "Part No.": /Part\s*No\.\s*([\w-]+)(?:-KCR)?/i,
+    "Qty Shipped": /Qty\s*Shipped\s*(\d+\.\d+)/i,
+    "Expected Receipt": /Expected\s*Receipt\s*(\d{2}\/\d{2}\/\d{4})/i,
+    "Purchase Ref.": /Purchase\s*Ref\.\s*TPO\/\d+\/(\d+)/i,
+    "Price from Advice Note": /Unit\s*Cost\s*(\d+\.\d+)/i
+  };
+
+  const rowData = extractData(text, patterns);
+  rowData["Part No."] = (rowData["Part No."] !== "N/A") ? cleanPartNo(rowData["Part No."]) : "N/A";
+
+  const priceFromDonite = await fetchPriceFromDoniteSpreadsheet(rowData["Part No."], rowData["Qty Shipped"]);
+  rowData["Price from Donite Spreadsheet"] = priceFromDonite;
+
+  rowData["Description"] = extractDescription(text);
+  rowData["Part Issue"] = extractPartIssue(text);
+  rowData["Material"] = extractSubpartDetailPartNumber(text);
+  rowData["Qty sheets sent"] = extractQtySheetsSent(text);
+
+  if (Object.values(rowData).some(value => value !== "N/A")) {
+    const row = createTableRow(rowData);
+    tableBody.innerHTML += row;
+  }
+}
+async function fetchPriceFromDoniteSpreadsheet(partNo, qtyShipped) {
+  try {
+    const response = await fetch('/get_price_from_donite_sheet', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ partNo, qtyShipped })
+    });
+    const data = await response.json();
+    return data.price || "N/A";
+  } catch (error) {
+    console.error("Error fetching price from Donite Spreadsheet:", error);
+    return "N/A";
+  }
+}
+
+function extractData(text, patterns) {
+  const rowData = {};
+  for (let field in patterns) {
+    const match = text.match(patterns[field]);
+    rowData[field] = match ? match[1].trim() : "N/A";
+  }
+  return rowData;
+}
+
+function extractDescription(text) {
+  const descriptionKeyword = "Part Text";
+  const descriptionStartIndex = text.indexOf(descriptionKeyword);
+  if (descriptionStartIndex !== -1) {
+    const descriptionEndIndex = text.indexOf("Default Location", descriptionStartIndex);
+    if (descriptionEndIndex !== -1) {
+      let description = text.substring(descriptionStartIndex + descriptionKeyword.length, descriptionEndIndex).trim();
+      if (description.endsWith("Description")) {
+        description = description.slice(0, -11).trim();
+      }
+      return description;
+    }
+  }
+  return "N/A";
+}
+
+// Revised extractPartIssue function:
+// Uses a regex that tolerates extra whitespace to capture the character preceding "WO Ref."
+function extractPartIssue(text) {
+  const regex = /([A-Z])\s*WO\s+Ref\./i;
+  const match = text.match(regex);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  // Fallback: use indexOf if regex doesn't match
+  const index = text.indexOf("WO Ref.");
+  if (index > 0) {
+    const char = text.charAt(index - 1).trim();
+    return char !== "" ? char : "N/A";
+  }
+  return "N/A";
+}
+
+function extractQtySheetsSent(text) {
+  const subPartsKeyword = "Sub Parts Detail";
+  const subPartsStartIndex = text.indexOf(subPartsKeyword);
+  if (subPartsStartIndex !== -1) {
+    const subPartsText = text.substring(subPartsStartIndex);
+    // This regex looks for "BN/" followed by non-space characters,
+    // then captures the number immediately following it.
+    const qtyRegex = /BN\/\S+\s+([\d.]+)/i;
+    const match = subPartsText.match(qtyRegex);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+  }
+  return "N/A";
+}
+
+
+function extractSubpartDetailPartNumber(text) {
+  const subPartsKeyword = "Sub Parts Detail";
+  const subPartsStartIndex = text.indexOf(subPartsKeyword);
+  if (subPartsStartIndex !== -1) {
+    const subPartsText = text.substring(subPartsStartIndex);
+    const headerRegex = /Part No\.\s+Description\s+Batch No\.\s+Qty Issue Date\s+/i;
+    const headerMatch = subPartsText.match(headerRegex);
+    if (headerMatch) {
+      const afterHeader = subPartsText.substring(headerMatch.index + headerMatch[0].length);
+      const partNoRegex = /^(K\d{4,}-\d{4,}-?)\s*(\(\d+X\d+X\d+\))/i;
+      const match = afterHeader.match(partNoRegex);
+      if (match) {
+        return match[1].trim() + match[2].trim();
+      }
+    }
+    const fallbackRegex = /(K\d{4,}-\d{4,}-?)\s*(\(\d+X\d+X\d+\))/i;
+    const fallbackMatch = subPartsText.match(fallbackRegex);
+    if (fallbackMatch) {
+      return fallbackMatch[1].trim() + fallbackMatch[2].trim();
+    }
+  }
+  return "N/A";
+}
+
+function createTableRow(rowData) {
+  return `<tr>
+    <td><input type="checkbox" class="row-checkbox"></td>
+    <td>${rowData["Advice Note"]}</td>
+    <td>${rowData["WO Ref."]}</td>
+    <td>${rowData["Part No."]}</td>
+    <td>${rowData["Qty Shipped"]}</td>
+    <td>${rowData["Expected Receipt"]}</td>
+    <td>${rowData["Purchase Ref."]}</td>
+    <td>${rowData["Price from Advice Note"]}</td>
+    <td>${rowData["Price from Donite Spreadsheet"]}</td>
+    <td>${rowData["Part Issue"]}</td>
+    <td>${rowData["Material"]}</td>
+    <td>${rowData["Qty sheets sent"]}</td>
+    <td>${rowData["Description"]}</td>
+  </tr>`;
+}
+
+document.getElementById("delete-selected").addEventListener("click", deleteSelectedRows);
+
+async function deleteSelectedRows() {
+  const checkboxes = document.querySelectorAll(".row-checkbox:checked");
+  const promises = [];
+
+  checkboxes.forEach(checkbox => {
+    const row = checkbox.parentNode.parentNode;
+    const adviceNote = row.cells[1].innerText;
+    row.parentNode.removeChild(row);
+    promises.push(deleteRowFromSharePoint(adviceNote));
+  });
+
+  try {
+    await Promise.all(promises);
+    alert("Selected rows deleted successfully.");
+  } catch (error) {
+    alert("An error occurred while deleting the selected rows.");
+  }
+}
+
+async function deleteRowFromSharePoint(adviceNote) {
+  try {
+    const response = await fetch('/delete_row', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ adviceNote })
+    });
+    const data = await response.json();
+    if (data.message) {
+      alert(data.message);
+    } else {
+      alert("Error: " + data.error);
+    }
+  } catch (error) {
+    console.error("Error deleting row from SharePoint:", error);
+    alert("An error occurred while deleting the row.");
+  }
+}
+
+function saveTableData() {
+  const table = document.getElementById("pdf-table");
+  const rows = table.getElementsByTagName("tr");
+  const tableData = [];
+
+  for (let i = 1; i < rows.length; i++) { // Skip header row
+    const cells = rows[i].getElementsByTagName("td");
+    const rowData = {
+      "Advice Note": cells[1].innerText,
+      "WO Ref.": cells[2].innerText,
+      "Part No.": cells[3].innerText,
+      "Qty Shipped": cells[4].innerText,
+      "Expected Receipt": cells[5].innerText,
+      "Purchase Ref.": cells[6].innerText,
+      "Price from Advice Note": cells[7].innerText,
+      "Price from Donite Spreadsheet": cells[8].innerText,
+      "Part Issue": cells[9].innerText,
+      "Material": cells[10].innerText,
+      "Qty sheets sent": cells[11].innerText,
+      "Description": cells[12].innerText
+    };
+    tableData.push(rowData);
+  }
+
+  fetch('/save_pdf_data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(tableData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.message) {
+      alert(data.message);
+    } else {
+      alert("Error: " + data.error);
+    }
+  })
+  .catch(error => {
+    console.error("Error saving data:", error);
+    alert("An error occurred while saving the data.");
+  });
+}
+function copyColumn(columnIndex) {
+  const table = document.getElementById("pdf-table");
+  const rows = table.getElementsByTagName("tr");
+  let columnData = [];
+
+  for (let i = 1; i < rows.length; i++) { // Skip header row
+    const cells = rows[i].getElementsByTagName("td");
+    if (cells.length > columnIndex) {
+      columnData.push(cells[columnIndex].innerText);
+    }
+  }
+
+  const textToCopy = columnData.join("\n");
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    alert("Column data copied to clipboard!");
+  }).catch(err => {
+    console.error("Failed to copy text: ", err);
+  });
+}
+</script>
+</body>
+</html>

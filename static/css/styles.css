@@ -1,0 +1,336 @@
+html, body {
+    height: 100%; /* Ensure the full height of the page is used */
+    margin: 0;    /* Remove default margin to ensure full coverage */
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-image: url("/static/images/image 4.jpeg");
+    background-size: cover;           /* Ensures the image covers the entire body */
+    background-position: center;      /* Centers the image */
+    background-repeat: no-repeat;     /* Prevents the image from repeating */
+    background-attachment: fixed;     /* Keeps the image fixed when scrolling */
+}
+
+.navbar {
+    background-color: rgba(44, 62, 80, 0.85); /* Updated for transparency */
+}
+
+.navbar-brand {
+    font-weight: bold;
+    color: #ecf0f1;
+    font-size: 1.75rem;
+}
+
+.navbar-nav .nav-link {
+    color: #ecf0f1;
+    font-size: 1.1rem;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #3498db;
+}
+
+/* Make sections transparent so the background image from the body is visible */
+section {
+    background: transparent !important;
+    padding: 70px 0;
+}
+
+.section-title {
+    margin-bottom: 30px;
+    font-weight: bold;
+    text-align: center;
+    color: #2c3e50;
+    font-size: 2.25rem;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.btn-primary,
+.btn-success,
+.btn-warning {
+    transition: background-color 0.3s;
+    border-radius: 50px;
+}
+
+.btn-primary:hover {
+    background-color: #007bff;
+    margin-right: 10px; /* Adds space between the buttons */
+}
+
+.btn-success:hover {
+    background-color: #28a745;
+}
+
+.btn-warning:hover {
+    background-color: #f39c12;
+}
+
+.bg-light {
+    background-color: transparent !important; /* Ensures the background is transparent */
+}
+
+footer {
+    background-color: rgba(44, 62, 80, 0.85); /* Updated for transparency */
+    color: #ecf0f1;
+    text-align: center;
+    padding: 20px 0;
+    font-size: 1rem;
+}
+
+.scroll-to-section {
+    cursor: pointer;
+}
+
+.icon {
+    font-size: 5rem;
+    color: #3498db;
+}
+
+.analytics-img {
+    width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+.form-control {
+    border-radius: 8px;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+}
+
+.form-select {
+    border-radius: 8px;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+}
+
+.form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .section-title {
+        font-size: 1.75rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .navbar-toggler {
+        border-color: #fff;
+    }
+}
+
+.btn-rounded {
+    border-radius: 50px;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-right: 10px; /* Adds space between the buttons */
+}
+
+/* Specific adjustments to make sure no section overrides the body image */
+#dashboard,
+#tool-management,
+#search-filter,
+#tool-check,
+#stock-check,
+#import-export {
+    background: transparent; /* No background for these sections */
+    margin-top: 40px;        /* Add margin to push the sections down */
+}
+
+/* Ensure these sections still look nice with the darkened container */
+#dashboard .container,
+#tool-management .container,
+#search-filter .container,
+#tool-check .container,
+#stock-check .container,
+#import-export .container {
+    background: rgba(0, 0, 0, 0.7);  /* Keeps text readable by darkening the container */
+    border-radius: 15px;             /* Optional: rounds the corners of the containers */
+    padding-top: 30px;               /* Pushes the content down to give more room at the top */
+    padding-bottom: 30px;            /* Adds space at the bottom for a more fitting card */
+}
+
+.section-title {
+    color: white; /* Makes section titles stand out on top of the dark background */
+}
+/* Ensure section titles are white for the specified sections */
+#tool-check .section-title,
+#stock-check .section-title,
+#import-export .section-title,
+#dashboard .section-title,
+#tool-management .section-title,
+#search-filter .section-title {
+    color: white; /* Set text color to white for all section titles */
+}
+.navbar {
+    background-color: rgba(0, 0, 0, 0.7); /* Fully transparent */
+    position: absolute; /* Keep navbar fixed on top of the page */
+    top: 0;
+    width: 100%; /* Ensure it spans the full width */
+    z-index: 10; /* Ensure it stays on top of other content */
+}
+
+.navbar-brand {
+    font-weight: bold;
+    color: #ecf0f1;
+    font-size: 1.75rem;
+}
+
+.navbar-nav .nav-link {
+    color: #ecf0f1;
+    font-size: 1.1rem;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #3498db;
+}
+/* Improve button appearance */
+.btn-group .btn {
+    margin-right: 10px;
+    margin-bottom: 5px;
+}
+
+/* Make buttons more responsive */
+@media (max-width: 768px) {
+    .btn-group .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+/* Adjust table responsiveness */
+.table {
+    width: 100%;
+    table-layout: auto;
+}
+
+@media (max-width: 768px) {
+    .table thead {
+        display: none;
+    }
+
+    .table, .table tbody, .table tr, .table td {
+        display: block;
+        width: 100%;
+    }
+
+    .table td {
+        text-align: right;
+        padding: 8px;
+    }
+
+    .table td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: inline-block;
+        width: 120px;
+    }
+}
+
+/* Basic table styling */
+.table {
+    width: 100%;
+    table-layout: auto;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+.table th, .table td {
+    text-align: left;
+    padding: 12px;
+    border: 1px solid #ddd;
+}
+
+.table thead {
+    background-color: #f8f9fa;
+}
+
+/* Style for buttons within the table */
+.btn-group .btn {
+    margin-right: 10px;
+    margin-bottom: 5px;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    /* Stack table rows vertically on small devices */
+    .table, .table tbody, .table tr, .table td {
+        display: block;
+        width: 100%;
+    }
+
+    /* Hide table headers on small screens */
+    .table thead {
+        display: none;
+    }
+
+    /* Each table cell will have a label with 'data-label' on smaller screens */
+    .table td {
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+    }
+
+    .table td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        position: absolute;
+        left: 10px;
+        top: 12px;
+        font-size: 0.8em;
+    }
+
+    /* Buttons should take full width on small screens */
+    .btn-group .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    /* Optionally, hide non-essential columns for smaller screens (e.g., Tool Number and Jig Number) */
+    .table td[data-label="Tool Number"],
+    .table td[data-label="Jig Number"] {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Adjustments for very small devices like phones in portrait mode */
+    .table td {
+        padding-left: 40%;
+    }
+
+    .table td:before {
+        left: 5px;
+    }
+
+    .table td[data-label="Tool Location"] {
+        display: none; /* Hide columns that aren't essential */
+    }
+}
+.alert-success {
+    margin-top: 10px;
+    font-weight: bold;
+    text-align: center;
+}
