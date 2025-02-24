@@ -159,10 +159,10 @@ async function handleFileUpload(event) {
   }
 }
 
-// Helper function to remove trailing alphabetical characters from the part number
 function cleanPartNo(partNo) {
-  // This regex removes a hyphen followed by one or more letters at the end of the string.
-  return partNo.replace(/-([A-Za-z]+)$/, '');
+  // This regex removes a hyphen followed by one or more letters at the end of the string,
+  // but only if the letters are not "EDI".
+  return partNo.replace(/-(?!EDI$)([A-Za-z]+)$/, '');
 }
 
 function debounce(func, wait) {
