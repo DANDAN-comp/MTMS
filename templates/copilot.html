@@ -331,8 +331,8 @@ function extractSubpartDetailPartNumber(text) {
     if (headerMatch) {
       const afterHeader = subPartsText.substring(headerMatch.index + headerMatch[0].length);
 
-      // Improved regex to be more flexible
-      const partNoRegex = /(K\d{4,}-\d{4,}-?)\s*(?:\()?(\d+X\d+X\d+)(?:\))?/i;
+      // Improved regex to capture decimal places in dimensions
+      const partNoRegex = /(K\d{4,}-\d{4,}-?)\s*(?:\()?(\d+X\d+X\d+(\.\d+)?)(?:\))?/i;
       const match = afterHeader.match(partNoRegex);
 
       if (match) {
@@ -340,8 +340,8 @@ function extractSubpartDetailPartNumber(text) {
       }
     }
 
-    // Enhanced fallback regex
-    const fallbackRegex = /(K\d{4,}-\d{4,}-?)\s*(?:\()?(\d+X\d+X\d+)(?:\))?/i;
+    // Enhanced fallback regex with decimal support
+    const fallbackRegex = /(K\d{4,}-\d{4,}-?)\s*(?:\()?(\d+X\d+X\d+(\.\d+)?)(?:\))?/i;
     const fallbackMatch = subPartsText.match(fallbackRegex);
 
     if (fallbackMatch) {
