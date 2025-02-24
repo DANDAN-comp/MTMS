@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,6 +112,7 @@
 </div>
 
 <script>
+
 document.getElementById("pdf-upload").addEventListener("change", debounce(handleFileUpload, 300));
 document.getElementById("save-data").addEventListener("click", saveTableData);
 
@@ -217,22 +219,44 @@ async function processPDFData(text) {
     tableBody.innerHTML += row;
   }
 }
+
+
 async function fetchPriceFromDoniteSpreadsheet(partNo, qtyShipped) {
   try {
-    const response = await fetch('/get_price_from_donite_sheet', {
+    // Remove any revision details (e.g., "-REV-B") from the part number.
+    const cleanedPartNo = partNo.split('-').slice(0, 4).join('-');
+
+    // First attempt: exact match search.
+    let response = await fetch('/get_price_from_donite_sheet', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ partNo, qtyShipped })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partNo: cleanedPartNo, qtyShipped })
     });
-    const data = await response.json();
+    let data = await response.json();
+
+    // If no price found, try a fuzzy (regex) search.
+    if (!data.price || data.price === "N/A") {
+      // Build a regex pattern that matches the cleaned part number,
+      // followed optionally by "-REV-" and any subsequent characters.
+      const regexPattern = `${cleanedPartNo}(?:-REV-.*)?`;
+      response = await fetch('/get_price_from_donite_sheet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Pass an extra flag to instruct the backend to perform a regex search.
+        body: JSON.stringify({ partNo: regexPattern, qtyShipped, regex: true })
+      });
+      data = await response.json();
+    }
+
     return data.price || "N/A";
   } catch (error) {
     console.error("Error fetching price from Donite Spreadsheet:", error);
     return "N/A";
   }
 }
+
+
+
 
 function extractData(text, patterns) {
   const rowData = {};
@@ -296,26 +320,38 @@ function extractQtySheetsSent(text) {
 function extractSubpartDetailPartNumber(text) {
   const subPartsKeyword = "Sub Parts Detail";
   const subPartsStartIndex = text.indexOf(subPartsKeyword);
+
   if (subPartsStartIndex !== -1) {
     const subPartsText = text.substring(subPartsStartIndex);
+
+    // Improved regex for header detection (handles extra spaces)
     const headerRegex = /Part No\.\s+Description\s+Batch No\.\s+Qty Issue Date\s+/i;
     const headerMatch = subPartsText.match(headerRegex);
+
     if (headerMatch) {
       const afterHeader = subPartsText.substring(headerMatch.index + headerMatch[0].length);
-      const partNoRegex = /^(K\d{4,}-\d{4,}-?)\s*(\(\d+X\d+X\d+\))/i;
+
+      // Improved regex to be more flexible
+      const partNoRegex = /(K\d{4,}-\d{4,}-?)\s*(?:\()?(\d+X\d+X\d+)(?:\))?/i;
       const match = afterHeader.match(partNoRegex);
+
       if (match) {
-        return match[1].trim() + match[2].trim();
+        return match[1].trim() + `(${match[2].trim()})`; // Ensures brackets are included
       }
     }
-    const fallbackRegex = /(K\d{4,}-\d{4,}-?)\s*(\(\d+X\d+X\d+\))/i;
+
+    // Enhanced fallback regex
+    const fallbackRegex = /(K\d{4,}-\d{4,}-?)\s*(?:\()?(\d+X\d+X\d+)(?:\))?/i;
     const fallbackMatch = subPartsText.match(fallbackRegex);
+
     if (fallbackMatch) {
-      return fallbackMatch[1].trim() + fallbackMatch[2].trim();
+      return fallbackMatch[1].trim() + `(${fallbackMatch[2].trim()})`;
     }
   }
-  return "N/A";
+
+  return "N/A"; // If no match is found, return "N/A"
 }
+
 
 function createTableRow(rowData) {
   return `<tr>
