@@ -223,7 +223,7 @@ async function processPDFData(text) {
 
 async function fetchPriceFromDoniteSpreadsheet(partNo, qtyShipped) {
   try {
-    // Remove any revision details (e.g., "-REV-B") from the part number.
+    // Remove any revision details (e.g., "-REV-A" or "-REV C") from the part number.
     const cleanedPartNo = partNo.split('-').slice(0, 4).join('-');
 
     // First attempt: exact match search.
@@ -238,12 +238,13 @@ async function fetchPriceFromDoniteSpreadsheet(partNo, qtyShipped) {
     if (!data.price || data.price === "N/A") {
       // Build a regex pattern that matches the cleaned part number,
       // followed optionally by "-REV-" and any subsequent characters.
-      const regexPattern = `${cleanedPartNo}(?:-REV-.*)?`;
+      const regexPattern = new RegExp(`^${cleanedPartNo}(?:-REV[- ]?.*)?$`, 'i');
+      console.log(`Regex Pattern: ${regexPattern.source}`); // Log the regex pattern
       response = await fetch('/get_price_from_donite_sheet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Pass an extra flag to instruct the backend to perform a regex search.
-        body: JSON.stringify({ partNo: regexPattern, qtyShipped, regex: true })
+        body: JSON.stringify({ partNo: regexPattern.source, qtyShipped, regex: true })
       });
       data = await response.json();
     }
@@ -254,7 +255,6 @@ async function fetchPriceFromDoniteSpreadsheet(partNo, qtyShipped) {
     return "N/A";
   }
 }
-
 
 
 

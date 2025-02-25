@@ -71,10 +71,11 @@ def get_price_from_donite_sheet_route():
     data = request.json
     part_no = data.get('partNo')
     qty_shipped = data.get('qtyShipped')
-    price = get_price_from_donite_sheet(part_no, qty_shipped)
+    regex_search = data.get('regex', False)
+    price = get_price_from_donite_sheet(part_no, qty_shipped, regex_search)
     return jsonify({"price": price})
 
-def get_price_from_donite_sheet(part_no, qty_shipped):
+def get_price_from_donite_sheet(part_no, qty_shipped, regex_search=False):
     file_url = "/sites/Donite/Shared Documents/Quality/01-QMS/Records/DONITE Production Approvals/PPAR/Donite Thermoforming Price List Feb 2022.xlsx"
     file_stream = get_sharepoint_file(file_url)
 
@@ -101,8 +102,11 @@ def get_price_from_donite_sheet(part_no, qty_shipped):
         print("Column indices not found")
         return "N/A"
 
-    # Use regex to find near matches for the part number
-    part_no_pattern = re.compile(re.escape(part_no) + r'-REV\s*[A-Z]', re.IGNORECASE)
+    if regex_search:
+        # Use regex to find near matches for the part number
+        part_no_pattern = re.compile(part_no, re.IGNORECASE)
+    else:
+        part_no_pattern = re.compile(re.escape(part_no), re.IGNORECASE)
 
     for row in range(header_row + 1, sheet.max_row + 1):
         cell_value = sheet.cell(row=row, column=col_part_no).value
