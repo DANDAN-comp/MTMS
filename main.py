@@ -14,9 +14,8 @@ import openpyxl
 import os
 import pandas as pd
 from pymongo import MongoClient
-from logging.handlers import RotatingFileHandler
-import schedule
-import time
+
+
 
 
 
@@ -41,9 +40,7 @@ password = "Infy@135"
 file_url_section1 = "/sites/Donite/Shared Documents/Quality/01-QMS/Records/DONITE Production Approvals/PPAR/PPAR.xlsx"  # Adjust with your file URL
 file_url_despatch = "/sites/Donite/Shared Documents/Quality/01-QMS/Records/DONITE Production Approvals/PPAR/TOM DASHBOARD.xlsx"
 
-handler = RotatingFileHandler('error.log', maxBytes=10000, backupCount=1)
-handler.setLevel(logging.ERROR)
-app.logger.addHandler(handler)
+
 
 # Function to authenticate and download file from SharePoint
 def get_sharepoint_file(file_url):
@@ -115,8 +112,7 @@ def process_file():
         print(f"Error in process_file: {e}")
 
 
-# Schedule the process to run every 1 minute
-schedule.every(1).minutes.do(process_file)
+
 
 @app.errorhandler(500)
 def internal_error(error):
