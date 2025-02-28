@@ -14,7 +14,9 @@ import openpyxl
 import os
 import pandas as pd
 from pymongo import MongoClient
-
+from logging.handlers import RotatingFileHandler
+import schedule
+import time
 
 
 
@@ -37,11 +39,16 @@ site_url = "https://donite1.sharepoint.com/sites/Donite"
 username = "daniel@donite.com"
 password = "Infy@135"
 file_url_section1 = "/sites/Donite/Shared Documents/Quality/01-QMS/Records/DONITE Production Approvals/PPAR/PPAR.xlsx"  # Adjust with your file URL
+file_url_despatch = "/sites/Donite/Shared Documents/Quality/01-QMS/Records/DONITE Production Approvals/PPAR/TOM DASHBOARD.xlsx"
 
+handler = RotatingFileHandler('error.log', maxBytes=10000, backupCount=1)
+handler.setLevel(logging.ERROR)
+app.logger.addHandler(handler)
 
 # Function to authenticate and download file from SharePoint
 def get_sharepoint_file(file_url):
     try:
+        print("Connecting to SharePoint...")
         ctx = ClientContext(site_url).with_credentials(UserCredential(username, password))
         file_stream = BytesIO()
         file = ctx.web.get_file_by_server_relative_url(file_url)
@@ -65,6 +72,93 @@ def upload_to_sharepoint(file_url, file_content):
     except Exception as e:
         app.logger.error(f"Error uploading file: {e}")
         raise
+
+
+# Function to refresh data in the Excel file
+def refresh_excel_data(file_stream):
+    try:
+        workbook = openpyxl.load_workbook(file_stream)
+        # Refresh data in 'Stores DespatchNoteItems' sheet
+        if 'Stores DespatchNoteItems' in workbook.sheetnames:
+            sheet = workbook['Stores DespatchNoteItems']
+            # Add your logic to refresh data here
+            # Example: sheet['A1'] = 'Updated Value'
+
+        # Refresh data in 'Structure Parts' sheet
+        if 'Structure Parts' in workbook.sheetnames:
+            sheet = workbook['Structure Parts']
+            # Add your logic to refresh data here
+            # Example: sheet['A1'] = 'Updated Value'
+
+        # Save the workbook to a BytesIO stream
+        updated_file_stream = BytesIO()
+        workbook.save(updated_file_stream)
+        updated_file_stream.seek(0)
+        return updated_file_stream
+    except Exception as e:
+        print(f"Error refreshing Excel data: {e}")
+        raise
+
+
+# Main function to download, refresh, and upload the file
+def process_file():
+    try:
+        # Download the file
+        file_stream = get_sharepoint_file(file_url_despatch)
+
+        # Refresh the data in the Excel file
+        updated_file_stream = refresh_excel_data(file_stream)
+
+        # Upload the updated file back to SharePoint
+        upload_to_sharepoint(file_url_despatch, updated_file_stream)
+    except Exception as e:
+        print(f"Error in process_file: {e}")
+
+
+# Schedule the process to run every 1 minute
+schedule.every(1).minutes.do(process_file)
+
+@app.errorhandler(500)
+def internal_error(error):
+    return "500 error: An internal server error occurred.", 500
+
+
+@app.route('/get_despatch_data', methods=['GET'])
+def get_despatch_data():
+    try:
+        selected_date = request.args.get('date')
+        file_stream = get_sharepoint_file(file_url_despatch)
+
+        # Read the necessary sheets into DataFrames
+        despatch_df = pd.read_excel(file_stream, sheet_name="Stores DespatchNoteItems")
+        parts_df = pd.read_excel(file_stream, sheet_name="Structure Parts")
+
+        # Add default values for missing columns
+        if 'Part Number' not in despatch_df.columns:
+            despatch_df['Part Number'] = 'N/A'
+        if 'Customer Code' not in despatch_df.columns:
+            despatch_df['Customer Code'] = 'TOM'
+
+        # Merge DataFrames to get Part Number
+        merged_df = despatch_df.merge(parts_df[['PartID', 'PartNumber']], left_on='Sales.SalesOrderDetails.PartID',
+                                      right_on='PartID', how='left')
+        merged_df['Part Number'] = merged_df['PartNumber'].fillna('N/A')
+
+        # Filter by selected date and CustomerID
+        if selected_date:
+            merged_df['DespatchDate'] = pd.to_datetime(merged_df['DespatchDate']).dt.strftime('%Y-%m-%d')
+            merged_df = merged_df[
+                (merged_df['DespatchDate'] == selected_date) & (merged_df['Stores.DespatchNotes.CustomerID'] == 113)]
+
+        # Select the necessary columns
+        merged_df = merged_df[
+            ['DespatchNote', 'SalesOrderNumber', 'LineNumber', 'Part Number', 'DespatchQuantity', 'Customer Code',
+             'DespatchDate']]
+        data = merged_df.to_dict(orient='records')
+        return jsonify({'data': data})
+    except Exception as e:
+        app.logger.error(f"Error fetching despatch data: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/get_price_from_donite_sheet', methods=['POST'])
 def get_price_from_donite_sheet_route():
@@ -203,6 +297,10 @@ def delete_row_route():
 @app.route('/data_extractor')
 def data_extractor():
     return render_template('copilot.html')
+
+@app.route('/Thompson Aero')
+def Thompson_Aero():
+    return render_template('TOM.html')
 
 @app.route('/save_pdf_data', methods=['POST'])
 def save_pdf_data():

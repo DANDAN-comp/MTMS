@@ -1,0 +1,335 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thompson's Aero Seating Dashboard</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- DataTables CSS -->
+  <link href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css">
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+ <style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-image: url("/static/images/image 4.jpeg");
+    background-size: cover;           /* Ensures the image covers the entire body */
+    background-position: center;      /* Centers the image */
+    background-repeat: no-repeat;     /* Prevents the image from repeating */
+    background-attachment: fixed;     /* Keeps the image fixed when scrolling */
+  }
+  .header {
+    display: flex;
+    align-items: center;  /* Align items vertically */
+    justify-content: flex-start; /* Align everything to the left */
+    padding: 10px;
+    width: 100%;
+}
+
+.logo-container {
+    flex-shrink: 0; /* Prevents the logo from resizing */
+    margin-right: 20px; /* Adds space between logo and text */
+}
+
+.logo {
+    width: 180px; /* Adjust size as needed */
+    height: auto;
+}
+
+.title-container {
+    text-align: center; /* Keeps heading text aligned to the left */
+    flex-grow: 1; /* Allows text container to take up remaining space */
+}
+
+.title-container h1,
+.title-container p {
+    margin: 0; /* Removes default margin */
+}
+
+
+  .navbar {
+    background-color: rgba(44, 62, 80, 0.85); /* Transparent navbar */
+  }
+
+  .header {
+    padding: 20px 0;
+    background-color: rgba(0, 0, 0, 0.7); /* Transparent black background */
+    color: white;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    margin-bottom: 20px;
+  }
+
+  .summary-card {
+    padding: 0.1px 0;
+    background-color: ghostwhite; /* Transparent black background */
+    color: black;
+
+    margin-bottom: 20px;
+  }
+
+  .chart-container {
+    position: relative;
+    margin: auto;
+    height: 400px;
+    width: 80%;
+  }
+
+  footer {
+    background-color: rgba(44, 62, 80, 0.85); /* Updated for transparency */
+    color: #ecf0f1;
+    text-align: center;
+    padding: 20px 0;
+    font-size: 1rem;
+}
+</style>
+
+<body>
+    <div class="header">
+        <!-- Logo Container -->
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='images/company logo.jpg') }}" alt="Company Logo" class="logo">
+        </div>
+
+        <!-- Title Container -->
+        <div class="title-container">
+            <h1>Thompson's Aero Seating Dashboard</h1>
+            <p>Daily Sales Order Releases & Despatch Quantities</p>
+        </div>
+    </div>
+<div>.</div>
+    <div>.</div>
+
+
+    <!-- Date Selection -->
+<div class="container mt-4">
+    <div class="row">
+        <!-- Date Selection Card -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-left">
+                    <h5 class="card-title mb-3">Select a Date</h5>
+                    <div class="input-group">
+                        <input type="date" id="datePicker" class="form-control" aria-label="Select Date" >
+                        <button class="btn btn-primary" id="searchBtn">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+  <div class="container">
+    <!-- Summary Section -->
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card summary-card">
+          <div class="card-body">
+            <h5 class="card-title">Total Sales Orders Released Today</h5>
+            <p class="card-text display-4" id="totalSOs">0</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card summary-card">
+          <div class="card-body">
+            <h5 class="card-title">Total Despatch Quantity Today</h5>
+            <p class="card-text display-4" id="totalDespatch">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+ <!-- Data Table Section -->
+    <div class="row mt-4">
+      <div class="col-md-12">
+        <div class="card shadow-sm border-0">
+          <div class="card-header">
+            <h4>Daily Despatch Details</h4>
+          </div>
+          <div class="card-body">
+            <table id="despatchTable" class="table table-striped table-bordered" style="width:100%">
+              <thead>
+                <tr>
+                  <th>Despatch Note</th>
+                  <th>SO Number</th>
+                  <th>Line Number</th>
+                  <th>Part Number</th>
+                  <th>Despatch Quantity</th>
+                  <th>Customer Code</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Data will be populated dynamically via AJAX -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Chart Section -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header">
+            <h4>Daily Despatch Overview</h4>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="despatchChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+<!-- jQuery, Popper.js, Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <!-- DataTables JS -->
+  <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function updateSummary(totalDespatchQuantity, totalSalesOrders) {
+    document.getElementById("totalDespatch").textContent = totalDespatchQuantity;
+    document.getElementById("totalSOs").textContent = totalSalesOrders;
+}
+
+// Function to update Chart.js dynamically based on table data
+function updateChart(totalDespatchQuantity, totalSalesOrders) {
+    var dailyData = {};
+    $('#despatchTable tbody tr').each(function () {
+        var date = $(this).find('td:eq(6)').text().trim();
+        var qty = parseInt($(this).find('td:eq(4)').text()) || 0;
+        dailyData[date] = (dailyData[date] || 0) + qty;
+    });
+    var labels = Object.keys(dailyData);
+    var dataPoints = Object.values(dailyData);
+    console.log("Labels:", labels);
+    console.log("Data Points:", dataPoints);
+    console.log("Total Despatch Quantity:", totalDespatchQuantity);
+    console.log("Total Sales Orders:", totalSalesOrders);
+    var ctx = document.getElementById('despatchChart').getContext('2d');
+    if (window.myChart) {
+        window.myChart.destroy();
+    }
+    window.myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Total Despatch Quantity',
+                    data: dataPoints,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Total Sales Orders',
+                    data: Array(labels.length).fill(totalSalesOrders),
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Daily Despatch Overview',
+                    font: {
+                        size: 16
+                    }
+                }
+            }
+        }
+    });
+}
+
+$(document).ready(function () {
+    // Initialize DataTable with no initial data
+    $('#despatchTable').DataTable({
+        "order": [[6, "desc"]], // Order by date
+        "columns": [
+            { "data": "DespatchNote", "width": "15%" },
+            { "data": "SalesOrderNumber", "width": "15%" },
+            { "data": "LineNumber", "width": "10%" },
+            { "data": "Part Number", "width": "20%" },
+            { "data": "DespatchQuantity", "width": "10%" },
+            { "data": "Customer Code", "width": "15%" },
+            { "data": "DespatchDate", "width": "15%" }
+        ],
+        "columnDefs": [
+            { "defaultContent": "N/A", "targets": "_all" }
+        ]
+    });
+
+    // Initial chart rendering (with no data)
+    updateChart(0, 0);
+});
+
+// When search button is clicked, fetch despatch data from Flask endpoint
+document.getElementById("searchBtn").addEventListener("click", function () {
+    const selectedDate = document.getElementById("datePicker").value;
+    if (!selectedDate) {
+        alert("Please select a date!");
+        return;
+    }
+    console.log("Selected Date:", selectedDate);
+    // Fetch data from Flask endpoint
+    $.ajax({
+        url: '/get_despatch_data',
+        type: 'GET',
+        data: { date: selectedDate },
+        success: function(response) {
+            // Initialize or update DataTable with new data
+            var table = $('#despatchTable').DataTable();
+            table.clear();
+            let totalDespatchQuantity = 0;
+            let totalSalesOrders = 0;
+            response.data.forEach(function(row) {
+                table.row.add({
+                    "DespatchNote": row['DespatchNote'],
+                    "SalesOrderNumber": row['SalesOrderNumber'],
+                    "LineNumber": row['LineNumber'],
+                    "Part Number": row['Part Number'] || 'N/A',
+                    "DespatchQuantity": row['DespatchQuantity'],
+                    "Customer Code": row['Customer Code'] || 'N/A',
+                    "DespatchDate": row['DespatchDate']
+                });
+                totalDespatchQuantity += parseInt(row['DespatchQuantity']) || 0;
+                totalSalesOrders += 1;
+            });
+            table.draw();
+            updateSummary(totalDespatchQuantity, totalSalesOrders);
+            updateChart(totalDespatchQuantity, totalSalesOrders);
+        },
+        error: function(xhr, status, error) {
+            console.error("Error fetching despatch data:", error);
+        }
+    });
+});
+</script>
+</body>
+</html>
