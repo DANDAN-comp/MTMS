@@ -133,7 +133,7 @@
       <div class="col-md-6">
         <div class="card summary-card">
           <div class="card-body">
-            <h5 class="card-title">Total Sales Orders Released Today</h5>
+            <h5 class="card-title">Total Sales Orders Released </h5>
             <p class="card-text display-4" id="totalSOs">0</p>
           </div>
         </div>
@@ -141,7 +141,7 @@
       <div class="col-md-6">
         <div class="card summary-card">
           <div class="card-body">
-            <h5 class="card-title">Total Despatch Quantity Today</h5>
+            <h5 class="card-title">Total Despatch Quantity </h5>
             <p class="card-text display-4" id="totalDespatch">0</p>
           </div>
         </div>
@@ -208,39 +208,54 @@ function updateSummary(totalDespatchQuantity, totalSalesOrders) {
     document.getElementById("totalSOs").textContent = totalSalesOrders;
 }
 
-// Function to update Chart.js dynamically based on table data
 function updateChart(totalDespatchQuantity, totalSalesOrders) {
+    // Get the DataTable instance and its current data
+    var table = $('#despatchTable').DataTable();
+    var tableData = table.rows().data().toArray();
+
+    // Aggregate daily despatch quantities and sales orders using the DataTables API data
     var dailyData = {};
-    $('#despatchTable tbody tr').each(function () {
-        var date = $(this).find('td:eq(6)').text().trim();
-        var qty = parseInt($(this).find('td:eq(4)').text()) || 0;
-        dailyData[date] = (dailyData[date] || 0) + qty;
+    var dailySalesOrders = {};
+    tableData.forEach(function(row) {
+        var date = row['DespatchDate']; // ensure this key matches your data
+        var qty = parseInt(row['DespatchQuantity']) || 0;
+        if (date) {
+            dailyData[date] = (dailyData[date] || 0) + qty;
+            dailySalesOrders[date] = (dailySalesOrders[date] || 0) + 1;
+        }
     });
+
+    // Extract labels (dates) and data points (aggregated quantities and sales orders)
     var labels = Object.keys(dailyData);
     var dataPoints = Object.values(dailyData);
+    var salesOrderPoints = Object.values(dailySalesOrders);
+
     console.log("Labels:", labels);
     console.log("Data Points:", dataPoints);
+    console.log("Sales Order Points:", salesOrderPoints);
     console.log("Total Despatch Quantity:", totalDespatchQuantity);
     console.log("Total Sales Orders:", totalSalesOrders);
+
     var ctx = document.getElementById('despatchChart').getContext('2d');
     if (window.myChart) {
         window.myChart.destroy();
     }
+
     window.myChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [
                 {
-                    label: 'Total Despatch Quantity',
+                    label: 'Daily Despatch Quantity',
                     data: dataPoints,
                     backgroundColor: 'rgba(54, 162, 235, 0.6)',
                     borderColor: 'rgba(54, 162, 235, 1)',
                     borderWidth: 1
                 },
                 {
-                    label: 'Total Sales Orders',
-                    data: Array(labels.length).fill(totalSalesOrders),
+                    label: 'Total Sales Orders Released',
+                    data: salesOrderPoints,
                     backgroundColor: 'rgba(255, 99, 132, 0.6)',
                     borderColor: 'rgba(255, 99, 132, 1)',
                     borderWidth: 1
@@ -250,8 +265,19 @@ function updateChart(totalDespatchQuantity, totalSalesOrders) {
         options: {
             responsive: true,
             scales: {
+                x: {
+                    type: 'category',
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Quantity'
+                    }
                 }
             },
             plugins: {
