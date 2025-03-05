@@ -14,12 +14,19 @@ import openpyxl
 import os
 import pandas as pd
 from pymongo import MongoClient
+from flask_caching import Cache
+
 
 
 
 
 
 app = Flask(__name__)
+
+# Configure cache (using SimpleCache for in-memory caching)
+app.config['CACHE_TYPE'] = 'SimpleCache'
+cache = Cache(app)
+
 app.logger.setLevel(logging.DEBUG)
 
 # Set up SQLite database URI
@@ -119,39 +126,58 @@ def internal_error(error):
     return "500 error: An internal server error occurred.", 500
 
 
+# Optimized function to fetch and process the despatch data
 @app.route('/get_despatch_data', methods=['GET'])
 def get_despatch_data():
+    selected_date = request.args.get('date')
+
+    # Check if the result is cached
+    cached_data = cache.get(f'despatch_data_{selected_date}')
+    if cached_data:
+        return jsonify({'data': cached_data})
+
     try:
-        selected_date = request.args.get('date')
+        # Retrieve the file from SharePoint
         file_stream = get_sharepoint_file(file_url_despatch)
 
-        # Read the necessary sheets into DataFrames
-        despatch_df = pd.read_excel(file_stream, sheet_name="Stores DespatchNoteItems")
-        parts_df = pd.read_excel(file_stream, sheet_name="Structure Parts")
+        # Read only necessary columns to improve performance
+        despatch_columns = ['Sales.SalesOrderDetails.PartID', 'DespatchNote', 'SalesOrderNumber', 'LineNumber', 'DespatchQuantity', 'DespatchDate', 'Stores.DespatchNotes.CustomerID']
+        despatch_df = pd.read_excel(file_stream, sheet_name="Stores DespatchNoteItems", usecols=despatch_columns, engine="openpyxl")
+
+        # Read parts data
+        parts_df = pd.read_excel(file_stream, sheet_name="Structure Parts", engine="openpyxl")
+
+        # Convert 'PartID' to a dictionary for faster lookup
+        parts_dict = parts_df.set_index('PartID')['PartNumber'].to_dict()
+
+        # Apply map() to get 'Part Number' instead of merge
+        despatch_df['Part Number'] = despatch_df['Sales.SalesOrderDetails.PartID'].map(parts_dict).fillna('N/A')
 
         # Add default values for missing columns
-        if 'Part Number' not in despatch_df.columns:
-            despatch_df['Part Number'] = 'N/A'
-        if 'Customer Code' not in despatch_df.columns:
-            despatch_df['Customer Code'] = 'TOM'
+        despatch_df['Customer Code'] = despatch_df.get('Customer Code', 'TOM')
 
-        # Merge DataFrames to get Part Number
-        merged_df = despatch_df.merge(parts_df[['PartID', 'PartNumber']], left_on='Sales.SalesOrderDetails.PartID',
-                                      right_on='PartID', how='left')
-        merged_df['Part Number'] = merged_df['PartNumber'].fillna('N/A')
-
-        # Filter by selected date and CustomerID
+        # Filter by selected date if provided
         if selected_date:
-            merged_df['DespatchDate'] = pd.to_datetime(merged_df['DespatchDate']).dt.strftime('%Y-%m-%d')
-            merged_df = merged_df[
-                (merged_df['DespatchDate'] == selected_date) & (merged_df['Stores.DespatchNotes.CustomerID'] == 113)]
+            despatch_df['DespatchDate'] = pd.to_datetime(despatch_df['DespatchDate']).dt.strftime('%Y-%m-%d')
+            despatch_df = despatch_df[despatch_df['DespatchDate'] == selected_date]
+
+        # Ensure 'Stores.DespatchNotes.CustomerID' exists and filter by CustomerID = 113
+        if 'Stores.DespatchNotes.CustomerID' in despatch_df.columns:
+            despatch_df = despatch_df[despatch_df['Stores.DespatchNotes.CustomerID'] == 113]
+        else:
+            app.logger.warning("'Stores.DespatchNotes.CustomerID' column not found in the data.")
 
         # Select the necessary columns
-        merged_df = merged_df[
-            ['DespatchNote', 'SalesOrderNumber', 'LineNumber', 'Part Number', 'DespatchQuantity', 'Customer Code',
-             'DespatchDate']]
-        data = merged_df.to_dict(orient='records')
+        despatch_df = despatch_df[['DespatchNote', 'SalesOrderNumber', 'LineNumber', 'Part Number', 'DespatchQuantity', 'Customer Code', 'DespatchDate']]
+
+        # Convert the result to dictionary for JSON response
+        data = despatch_df.to_dict(orient='records')
+
+        # Cache the result for future use (timeout: 5 minutes)
+        cache.set(f'despatch_data_{selected_date}', data, timeout=5*60)
+
         return jsonify({'data': data})
+
     except Exception as e:
         app.logger.error(f"Error fetching despatch data: {e}")
         return jsonify({'error': str(e)}), 500
