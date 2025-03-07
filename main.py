@@ -7,6 +7,7 @@ import openpyxl
 import os
 import pandas as pd
 from flask_caching import Cache
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -112,11 +113,79 @@ def get_despatch_data():
         app.logger.error(f"Error fetching despatch data: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/get_previous_month_data', methods=['GET'])
+def get_previous_month_data():
+    try:
+        # Retrieve the file from SharePoint
+        file_stream = get_sharepoint_file(file_url_despatch)
 
+        # Define the necessary columns and load data
+        despatch_columns = [
+            'Sales.SalesOrderDetails.PartID', 'DespatchNote', 'SalesOrderNumber',
+            'LineNumber', 'DespatchQuantity', 'DespatchDate', 'Stores.DespatchNotes.CustomerID'
+        ]
+        despatch_df = pd.read_excel(
+            file_stream,
+            sheet_name="Stores DespatchNoteItems",
+            usecols=despatch_columns,
+            engine="openpyxl"
+        )
+
+        # Filter by CustomerID if the column exists
+        if 'Stores.DespatchNotes.CustomerID' in despatch_df.columns:
+            despatch_df = despatch_df[despatch_df['Stores.DespatchNotes.CustomerID'] == 113]
+        else:
+            app.logger.warning("'Stores.DespatchNotes.CustomerID' column not found in the data.")
+
+        # Convert DespatchDate to datetime and drop invalid dates
+        despatch_df['DespatchDate'] = pd.to_datetime(despatch_df['DespatchDate'], errors='coerce')
+        despatch_df.dropna(subset=['DespatchDate'], inplace=True)
+
+        # Calculate previous month's first and last day
+        today = datetime.today()
+        first_day_this_month = today.replace(day=1)
+        last_day_prev_month = first_day_this_month - timedelta(days=1)
+        first_day_prev_month = last_day_prev_month.replace(day=1)
+
+        # Create a full date range DataFrame for the previous month
+        full_date_range = pd.date_range(first_day_prev_month, last_day_prev_month)
+        full_df = pd.DataFrame({'date_str': full_date_range.strftime('%Y-%m-%d')})
+
+        # Filter the despatch data for dates in the previous month
+        mask = (despatch_df['DespatchDate'] >= first_day_prev_month) & (despatch_df['DespatchDate'] <= last_day_prev_month)
+        prev_month_df = despatch_df.loc[mask].copy()
+        prev_month_df['date_str'] = prev_month_df['DespatchDate'].dt.strftime('%Y-%m-%d')
+
+        # Group by date: Sum the DespatchQuantity and count the SalesOrderNumber (as a proxy for sales orders)
+        grouped = prev_month_df.groupby('date_str').agg({
+            'DespatchQuantity': 'sum',
+            'SalesOrderNumber': 'count'
+        }).reset_index()
+
+        # Rename columns to match your JS keys
+        grouped.rename(
+            columns={'SalesOrderNumber': 'sales_orders', 'DespatchQuantity': 'despatch_quantity'},
+            inplace=True
+        )
+
+        # Merge the full date range with the grouped data; fill missing days with 0
+        merged = pd.merge(full_df, grouped, on='date_str', how='left')
+        merged['sales_orders'] = merged['sales_orders'].fillna(0).astype(int)
+        merged['despatch_quantity'] = merged['despatch_quantity'].fillna(0)
+
+        # Return data in JSON format
+        data = merged.to_dict(orient='records')
+        return jsonify({'data': data})
+    except Exception as e:
+        app.logger.error(f"Error fetching previous month data: {e}")
+        return jsonify({'error': str(e)}), 500
 
 def get_price_from_donite_sheet(part_no, qty_shipped, regex_search=False):
     file_url = "/sites/Donite/Shared Documents/Quality/01-QMS/Records/DONITE Production Approvals/PPAR/Donite Thermoforming Price List Feb 2022.xlsx"
     file_stream = get_sharepoint_file(file_url)
+    print (qty_shipped)
+    print (part_no)
+
 
     workbook = openpyxl.load_workbook(file_stream, data_only=True)
     sheet = workbook.active
@@ -223,6 +292,15 @@ def delete_row_from_sharepoint(advice_note):
 @app.route("/")
 def home():
     return render_template("SPLIT 1 TEST.html")
+
+@app.route('/get_price_from_donite_sheet', methods=['POST'])
+def get_price_from_donite_sheet_route():
+    data = request.json
+    part_no = data.get('partNo')
+    qty_shipped = data.get('qtyShipped')
+    regex_search = data.get('regex', False)
+    price = get_price_from_donite_sheet(part_no, qty_shipped, regex_search)
+    return jsonify({"price": price})
 
 @app.route('/delete_row', methods=['POST'])
 def delete_row_route():

@@ -175,6 +175,23 @@
         </div>
       </div>
     </div>
+   <!-- New Card: Previous Month Totals Line Chart -->
+<div class="row mt-4">
+  <div class="col-md-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-header">
+        <h4>Previous Month Totals</h4>
+        <p id="previousMonthSummary" style="font-size: 1.2em;  text-transform: titlecase ;"></p>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="previousMonthChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
     <!-- Chart Section -->
     <div class="row">
       <div class="col-md-12">
@@ -296,7 +313,7 @@ function updateChart(totalDespatchQuantity, totalSalesOrders) {
 $(document).ready(function () {
     // Initialize DataTable with no initial data
     $('#despatchTable').DataTable({
-        "order": [[6, "desc"]], // Order by date
+        "order": [[6, "desc"]],
         "columns": [
             { "data": "DespatchNote", "width": "15%" },
             { "data": "SalesOrderNumber", "width": "15%" },
@@ -311,10 +328,106 @@ $(document).ready(function () {
         ]
     });
 
+    // Fetch previous month's data and update the chart
+    $.ajax({
+        url: '/get_previous_month_data',
+        type: 'GET',
+        cache: false,
+        success: function(response) {
+            updatePreviousMonthChart(response.data);
+        },
+        error: function(xhr, status, error) {
+            console.error("Error fetching previous month data:", error);
+        }
+    });
+
     // Initial chart rendering (with no data)
     updateChart(0, 0);
 });
 
+function updatePreviousMonthChart(data) {
+    if (!data || !Array.isArray(data)) {
+        console.error('Invalid data format');
+        return;
+    }
+
+    const labels = data.map(item => item.date_str);
+    const salesOrders = data.map(item => item.sales_orders);
+    const despatchQty = data.map(item => item.despatch_quantity);
+
+    // Calculate totals
+    const totalSalesOrders = salesOrders.reduce((a, b) => a + b, 0);
+    const totalDespatchQty = despatchQty.reduce((a, b) => a + b, 0);
+
+    // Get the previous month name in uppercase
+    const date = new Date();
+    date.setMonth(date.getMonth() - 1);
+    const monthName = date.toLocaleString('default', { month: 'long' }).toUpperCase();
+
+    // Update the summary text
+    document.getElementById('previousMonthSummary').innerHTML = `
+        For the month of "${monthName}":<br>
+        &nbsp;&nbsp;&bull; Total Sales Orders Released: <span style="font-weight: bold;">${totalSalesOrders}</span><br>
+        &nbsp;&nbsp;&bull; Total Dispatch Quantity: <span style="font-weight: bold;">${totalDespatchQty}</span>
+    `;
+
+    var ctx = document.getElementById('previousMonthChart').getContext('2d');
+    if (window.previousMonthChart instanceof Chart) {
+        window.previousMonthChart.destroy();
+    }
+    window.previousMonthChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Total Sales Orders Released',
+                    data: salesOrders,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: false,
+                    tension: 0.1
+                },
+                {
+                    label: 'Total Despatch Quantity',
+                    data: despatchQty,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: false,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Quantity'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Previous Month Totals'
+                }
+            }
+        }
+    });
+}
 // When search button is clicked, fetch despatch data from Flask endpoint
 document.getElementById("searchBtn").addEventListener("click", function () {
     const selectedDate = document.getElementById("datePicker").value;

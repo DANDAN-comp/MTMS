@@ -116,14 +116,7 @@ def get_despatch_data():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/get_price_from_donite_sheet', methods=['POST'])
-def get_price_from_donite_sheet_route():
-    data = request.json
-    part_no = data.get('partNo')
-    qty_shipped = data.get('qtyShipped')
-    regex_search = data.get('regex', False)
-    price = get_price_from_donite_sheet(part_no, qty_shipped, regex_search)
-    return jsonify({"price": price})
+
 
 PPAR:
 @app.route('/save_form', methods=['POST'])
