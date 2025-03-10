@@ -154,6 +154,7 @@
           <div class="card-header">
             <h4>Daily Despatch Details</h4>
           </div>
+
           <div class="card-body">
             <table id="despatchTable" class="table table-striped table-bordered" style="width:100%">
               <thead>
@@ -173,15 +174,23 @@
             </table>
           </div>
         </div>
+
+            <button class="btn btn-primary" id="downloadPdfBtn">
+    <i class="fas fa-file-download"></i> Download PDF
+</button>
+
       </div>
+
     </div>
    <!-- New Card: Previous Month Totals Line Chart -->
 <div class="row mt-4">
   <div class="col-md-12">
     <div class="card shadow-sm border-0">
       <div class="card-header">
-        <h4>Previous Month Totals</h4>
+        <h4>Previous Month Totals  </h4>
         <p id="previousMonthSummary" style="font-size: 1.2em;  text-transform: titlecase ;"></p>
+          <h7>Note: The graph below is interactive. Hover over the data points to view exact values of Sales Orders and Dispatch Quantity per day. Additionally, click on the blue or pink rectangles to refine your view of the graph.</h7>
+        <p id="previousMonthSummar" style="font-size: 1.2em;  text-transform: titlecase ;"></p>
       </div>
       <div class="card-body">
         <div class="chart-container">
@@ -219,6 +228,11 @@
   <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- pdf --->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+
 <script>
 function updateSummary(totalDespatchQuantity, totalSalesOrders) {
     document.getElementById("totalDespatch").textContent = totalDespatchQuantity;
@@ -468,6 +482,148 @@ document.getElementById("searchBtn").addEventListener("click", function () {
             console.error("Error fetching despatch data:", error);
         }
     });
+});
+document.getElementById("downloadPdfBtn").addEventListener("click", function () {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+
+    // Helper function to draw a border on the current page
+    function drawPageBorder(pdf) {
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        pdf.setLineWidth(1);
+        pdf.setDrawColor(0, 0, 0);
+        // Draw a border with a 5-unit margin from each edge
+        pdf.rect(5, 5, pageWidth - 10, pageHeight - 10, 'S');
+    }
+
+    // ************ Custom Font Setup (APTOS) ************
+    // Uncomment and adjust if needed:
+    // pdf.addFileToVFS("Aptos-Regular.ttf", "BASE64_ENCODED_FONT_DATA_HERE");
+    // pdf.addFont("Aptos-Regular.ttf", "Aptos", "normal");
+
+    // ========= Page 1: Main Report =========
+    // Header Section
+    pdf.setFont("Aptos", "bold");
+    pdf.setFontSize(16);
+    pdf.text("DONITE DESPATCH DETAILS", pdf.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+
+    let yPosition = 30;
+    pdf.setFontSize(14);
+    pdf.text("Daily Sales Order Releases & Despatch Quantities", 20, yPosition);
+
+    yPosition += 10; // leave space
+
+    // Details (Size:12, Normal, Left Aligned)
+    pdf.setFont("Aptos", "normal");
+    pdf.setFontSize(12);
+
+    let selectedDate = document.getElementById("datePicker").value || "N/A";
+    let totalSOs = document.getElementById("totalSOs").textContent || "0";
+    let totalDespatch = document.getElementById("totalDespatch").textContent || "0";
+
+    pdf.text("Selected Date: " + selectedDate, 20, yPosition);
+    yPosition += 10;
+    pdf.text("Total Sales Orders Released: " + totalSOs, 20, yPosition);
+    yPosition += 10;
+    pdf.text("Total Despatch Quantity: " + totalDespatch, 20, yPosition);
+    yPosition += 10;
+
+    // Leave additional space before the table
+    yPosition += 10;
+
+    // ************ Table Section ************
+    // Extract all rows from DataTable (including non-visible rows)
+    var table = $('#despatchTable').DataTable();
+    var tableData = table.rows({ page: 'all' }).data().toArray();
+
+    var headers = [["Despatch Note", "SO Number", "Line Number", "Part Number", "Despatch Quantity", "Customer Code", "Date"]];
+    var body = tableData.map(function(row) {
+        return [
+            row["DespatchNote"],
+            row["SalesOrderNumber"],
+            row["LineNumber"],
+            row["Part Number"] || 'N/A',
+            row["DespatchQuantity"],
+            row["Customer Code"] || 'N/A',
+            row["DespatchDate"]
+        ];
+    });
+
+    pdf.autoTable({
+        head: headers,
+        body: body,
+        startY: yPosition,
+        // Use didDrawPage to draw a border on each autoTable-generated page
+        didDrawPage: function (data) {
+            drawPageBorder(pdf);
+        },
+        styles: { font: "Aptos", fontSize: 12, halign: 'left' },
+        headStyles: { font: "Aptos", fontSize: 12, fontStyle: 'normal', halign: 'left' }
+    });
+
+    // Add footer on Page 1
+    let pageHeight = pdf.internal.pageSize.getHeight();
+    pdf.setFont("Aptos", "normal");
+    pdf.setFontSize(9);
+    pdf.text("***REPORT GENERATED BY DONITE DIGITAL TECHNOLOGY 4.0***", pdf.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+
+    // ========= Add a New Page for Previous Month Totals =========
+    pdf.addPage();
+    // Draw border for Page 2 immediately
+    drawPageBorder(pdf);
+
+    // Reset yPosition for the new page
+    yPosition = 20;
+
+    // Calculate previous month name (in uppercase)
+    let now = new Date();
+    now.setMonth(now.getMonth() - 1);
+    let monthName = now.toLocaleString('default', { month: 'long' }).toUpperCase();
+
+    // --- Formatted Text for Previous Month Totals Section ---
+    // Line 1: "Previous Month Totals:" (no extra space after)
+    pdf.setFont("Aptos", "bold");
+    pdf.setFontSize(14);
+    pdf.text("Previous Month Totals:", 20, yPosition);
+
+    // Immediately next line: "For the month of "(MONTH NAME)":
+    yPosition += 10;
+    pdf.setFont("Aptos", "normal");
+    pdf.setFontSize(12);
+    pdf.text(`For the month of "${monthName}":`, 20, yPosition);
+
+    // Increase space before the bullet for Total Sales Orders Released
+    yPosition += 15;
+    pdf.text(`• Total Sales Orders Released: ${totalSOs}`, 20, yPosition);
+
+    // Increase space before the bullet for Total Dispatch Quantity
+    yPosition += 15;
+    pdf.text(`• Total Dispatch Quantity: ${totalDespatch}`, 20, yPosition);
+
+    // Increase space twice before the chart
+    yPosition += 20;
+
+    // --- Add the Previous Month Chart ---
+    let prevChartCanvas = document.getElementById("previousMonthChart");
+    if (prevChartCanvas) {
+        let prevChartImage = prevChartCanvas.toDataURL("image/png");
+        let pageWidth = pdf.internal.pageSize.getWidth();
+        let imgWidth = pageWidth - 40; // margins of 20 on each side
+        let ratio = prevChartCanvas.height / prevChartCanvas.width;
+        let imgHeight = imgWidth * ratio;
+        pdf.addImage(prevChartImage, 'PNG', 20, yPosition, imgWidth, imgHeight);
+        yPosition += imgHeight + 10;
+    }
+
+    // Footer for Page 2
+    let page2Height = pdf.internal.pageSize.getHeight();
+    pdf.setFont("Aptos", "normal");
+    pdf.setFontSize(9);
+    pdf.text("***REPORT GENERATED BY DONITE DIGITAL TECHNOLOGY 4.0***", pdf.internal.pageSize.getWidth() / 2, page2Height - 10, { align: 'center' });
+
+    // Save the PDF
+    pdf.save(`Despatch_Report_${selectedDate}.pdf`);
 });
 </script>
 </body>
