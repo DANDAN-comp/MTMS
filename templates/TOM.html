@@ -449,25 +449,45 @@ function updatePreviousMonthChart(data) {
     });
 }
 
-// When search button is clicked, fetch despatch data from Flask endpoint
 document.getElementById("searchBtn").addEventListener("click", function () {
     const selectedDate = document.getElementById("datePicker").value;
     if (!selectedDate) {
         alert("Please select a date!");
         return;
     }
-    console.log("Selected Date:", selectedDate);
-    // Fetch data from Flask endpoint
+
+    // Display "Loading..." in summary fields
+    document.getElementById("totalSOs").textContent = "Loading...";
+    document.getElementById("totalDespatch").textContent = "Loading...";
+
+    // Show "Loading..." inside the table
+    var table = $('#despatchTable').DataTable();
+    table.clear().draw();
+    table.row.add({
+        "DespatchNote": "Loading...",
+        "SalesOrderNumber": "Loading...",
+        "LineNumber": "Loading...",
+        "Part Number": "Loading...",
+        "DespatchQuantity": "Loading...",
+        "Customer Code": "Loading...",
+        "DespatchDate": "Loading..."
+    }).draw();
+
+    // Disable search button
+    const searchBtn = document.getElementById("searchBtn");
+    searchBtn.disabled = true;
+    searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+
+    // Fetch data from Flask API
     $.ajax({
         url: '/get_despatch_data',
         type: 'GET',
         data: { date: selectedDate },
         success: function(response) {
-            // Initialize or update DataTable with new data
-            var table = $('#despatchTable').DataTable();
             table.clear();
             let totalDespatchQuantity = 0;
             let totalSalesOrders = 0;
+
             response.data.forEach(function(row) {
                 table.row.add({
                     "DespatchNote": row['DespatchNote'],
@@ -481,12 +501,20 @@ document.getElementById("searchBtn").addEventListener("click", function () {
                 totalDespatchQuantity += parseInt(row['DespatchQuantity']) || 0;
                 totalSalesOrders += 1;
             });
+
             table.draw();
             updateSummary(totalDespatchQuantity, totalSalesOrders);
             updateChart(totalDespatchQuantity, totalSalesOrders);
         },
         error: function(xhr, status, error) {
             console.error("Error fetching despatch data:", error);
+            document.getElementById("totalSOs").textContent = "Error loading data";
+            document.getElementById("totalDespatch").textContent = "Error loading data";
+        },
+        complete: function() {
+            // Re-enable search button after request completes
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = '<i class="fas fa-search"></i> Search';
         }
     });
 });
