@@ -190,7 +190,32 @@ def save_tool():
     jig_logs = JigLog.query.order_by(JigLog.timestamp.desc()).all()
     return render_template('save_tool.html', mould_logs=mould_logs, jig_logs=jig_logs)
 
+@app.route('/update_tools', methods=['POST'])
+def update_tools():
+    tools = request.form.to_dict(flat=False)
 
+    # Loop over all rows using the index keys
+    row_count = len(tools['tools[0][part_number]'])  # assuming consistent length
+
+    for i in range(row_count):
+        part_number = tools[f'tools[{i}][part_number]'][0]
+        tool_location = tools[f'tools[{i}][tool_location]'][0]
+        jig_location = tools[f'tools[{i}][jig_location]'][0]
+        plug_location = tools[f'tools[{i}][plug_location]'][0]
+        fit_check_location = tools[f'tools[{i}][fit_check_location]'][0]
+
+        part = Part.query.filter_by(part_number=part_number).first()
+        if part:
+            part.tool_location = tool_location
+            part.jig_location = jig_location
+            part.plug_location = plug_location
+            part.fit_check_location = fit_check_location
+        else:
+            flash(f"Part number {part_number} not found.", "error")
+
+    db.session.commit()
+    flash("Tool locations updated successfully!", "success")
+    return redirect(url_for('view_tools'))  # Change 'view_tools' if your endpoint differs
 
 def format_timedelta_days_hours_minutes(td):
     total_seconds = int(td.total_seconds())

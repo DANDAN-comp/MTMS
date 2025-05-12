@@ -5,9 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>View Mould Tools</title>
   <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-  <!-- SweetAlert2 CSS (optional as it loads its own styles) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <link
+    rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+  >
+  <!-- SweetAlert2 CSS -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+  >
   <style>
     body {
       background-color: #f7f7f7;
@@ -36,6 +42,20 @@
     h1 {
       margin-bottom: 20px;
     }
+    @media (max-width: 575.98px) {
+  /* Make Part Number column ~60% of table width, and the next two ~20% each */
+  .table-responsive .table thead th:first-child,
+  .table-responsive .table tbody td:first-child {
+    width: 60%;
+  }
+  .table-responsive .table thead th:nth-child(2),
+  .table-responsive .table tbody td:nth-child(2),
+  .table-responsive .table thead th:nth-child(3),
+  .table-responsive .table tbody td:nth-child(3) {
+    width: 20%;
+  }
+}
+
   </style>
   <!-- jQuery and SweetAlert2 JS -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -45,33 +65,81 @@
   <div class="container">
     <h1 class="text-center">View Mould Tools</h1>
     <div class="table-wrapper">
-      <div style="overflow-x: auto;">
-      <table class="table table-striped table-hover">
-        <thead>
-          <tr>
-            <th>Part Number</th>
-            <th>Tool Location</th>
-            <th>Jig Location</th>
-            <th>Plug Location</th>
-            <th>Fit Check Location</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for tool in tools %}
-          <tr>
-            <td>{{ tool.part_number }}</td>
-            <td>{{ tool.tool_location }}</td>
-            <td>{{ tool.jig_location }}</td>
-            <td>{{ tool.plug_location }}</td>
-            <td>{{ tool.fit_check_location }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <form method="POST" action="/update_tools">
+          <table class="table table-striped table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Part Number</th>
+                <th>Tool Location</th>
+                <th>Jig Location</th>
+                <!-- hide on xs -->
+                <th class="d-none d-sm-table-cell">Plug Location</th>
+                <th class="d-none d-sm-table-cell">Fit Check Location</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for tool in tools %}
+              <tr>
+                <td>
+                  <input
+                    type="text"
+                    name="tools[{{ loop.index0 }}][part_number]"
+                    class="form-control"
+                    value="{{ tool.part_number }}"
+                    readonly
+                  >
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    name="tools[{{ loop.index0 }}][tool_location]"
+                    class="form-control"
+                    value="{{ tool.tool_location }}"
+                  >
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    name="tools[{{ loop.index0 }}][jig_location]"
+                    class="form-control"
+                    value="{{ tool.jig_location }}"
+                  >
+                </td>
+                <!-- hide on xs -->
+                <td class="d-none d-sm-table-cell">
+                  <input
+                    type="text"
+                    name="tools[{{ loop.index0 }}][plug_location]"
+                    class="form-control"
+                    value="{{ tool.plug_location }}"
+                  >
+                </td>
+                <td class="d-none d-sm-table-cell">
+                  <input
+                    type="text"
+                    name="tools[{{ loop.index0 }}][fit_check_location]"
+                    class="form-control"
+                    value="{{ tool.fit_check_location }}"
+                  >
+                </td>
+                <td>
+                  <button
+                    type="submit"
+                    class="btn btn-success btn-sm"
+                  >Save</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </form>
+      </div>
     </div>
   </div>
 
-  <!-- Display SweetAlert2 Popups for Flash Messages -->
+  <!-- SweetAlert2 Flash Messages -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       {% with messages = get_flashed_messages(with_categories=true) %}
