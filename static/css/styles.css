@@ -227,9 +227,7 @@ footer {
 }
 
 @media (max-width: 768px) {
-    .table thead {
-        display: none;
-    }
+
 
     .table, .table tbody, .table tr, .table td {
         display: block;
@@ -273,64 +271,49 @@ footer {
     margin-bottom: 5px;
 }
 
-/* Responsive styles */
+/* Responsive Table for Mobile */
 @media (max-width: 768px) {
-    /* Stack table rows vertically on small devices */
-    .table, .table tbody, .table tr, .table td {
-        display: block;
-        width: 100%;
-    }
+  table.mobile-stack thead {
+    display: none;
+  }
 
-    /* Hide table headers on small screens */
-    .table thead {
-        display: none;
-    }
+  table.mobile-stack,
+  table.mobile-stack tbody,
+  table.mobile-stack tr,
+  table.mobile-stack td {
+    display: block;
+    width: 100%;
+  }
 
-    /* Each table cell will have a label with 'data-label' on smaller screens */
-    .table td {
-        position: relative;
-        padding-left: 50%;
-        text-align: right;
-    }
+  table.mobile-stack tr {
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    padding: 10px;
+  }
 
-    .table td:before {
-        content: attr(data-label);
-        font-weight: bold;
-        position: absolute;
-        left: 10px;
-        top: 12px;
-        font-size: 0.8em;
-    }
+  table.mobile-stack td {
+    border: none;
+    border-bottom: 1px solid #eee;
+    padding: 8px;
+  }
 
-    /* Buttons should take full width on small screens */
-    .btn-group .btn {
-        width: 100%;
-        margin-bottom: 10px;
-    }
-
-    /* Optionally, hide non-essential columns for smaller screens (e.g., Tool Number and Jig Number) */
-    .table td[data-label="Tool Number"],
-    .table td[data-label="Jig Number"] {
-        display: none;
-    }
-}
-
-@media (max-width: 480px) {
-    /* Adjustments for very small devices like phones in portrait mode */
-    .table td {
-        padding-left: 40%;
-    }
-
-    .table td:before {
-        left: 5px;
-    }
-
-    .table td[data-label="Tool Location"] {
-        display: none; /* Hide columns that aren't essential */
-    }
-}
-.alert-success {
-    margin-top: 10px;
+  table.mobile-stack td::before {
+    content: attr(data-label);
+    display: block;
     font-weight: bold;
-    text-align: center;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+    color: #333;
+  }
+
+  table.mobile-stack td:last-child {
+    border-bottom: none;
+  }
+
+  .btn-group .btn {
+    width: 100%;
+    margin-bottom: 10px;
+  }
 }

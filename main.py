@@ -1,5 +1,5 @@
 import re
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, flash, url_for, send_file
 from office365.sharepoint.client_context import ClientContext
 from office365.runtime.auth.user_credential import UserCredential
 from io import BytesIO
@@ -8,12 +8,516 @@ import os
 import pandas as pd
 from flask_caching import Cache
 from datetime import datetime, timedelta
+import pytz
+import sqlite3
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import text, Integer, String, Float, or_
+import time
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from flask import jsonify
+from werkzeug.utils import secure_filename
+
+
+
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.urandom(24)
+
+
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///MouldTool.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+
+# Configure the additional database
+app.config['SQLALCHEMY_BINDS'] = {
+    'new_db': 'sqlite:///NewToolLog.db',
+    'jig_db': 'sqlite:///JigLog.db',
+    'analysis_db': 'sqlite:///AnalysisLog.db',
+
+}
+
+
+db = SQLAlchemy(app)
+
+
+class Part(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    part_number = db.Column(db.String(100), unique=True, nullable=False)
+    tool_location = db.Column(db.String(250))
+    jig_location = db.Column(db.String(250))
+    plug_location = db.Column(db.String(250))
+    fit_check_location = db.Column(db.String(250))
+
+with app.app_context():
+    db.create_all()
+
+
+
+class ShopFloorToolLog(db.Model):
+    __bind_key__ = 'new_db'
+    id = db.Column(db.Integer, primary_key=True)
+    part_number = db.Column(db.String(100), unique=True, nullable=False)
+    status = db.Column(db.String(100))
+    timestamp = db.Column(db.DateTime, nullable=False)
+
+
+with app.app_context():
+    db.create_all()
+
+
+class JigLog(db.Model):
+    __bind_key__ = 'jig_db'
+    id = db.Column(db.Integer, primary_key=True)
+    jig_number = db.Column(db.String(100), unique=True, nullable=False)
+    status = db.Column(db.String(100))
+    timestamp = db.Column(db.DateTime, nullable=False)
+
+
+with app.app_context():
+    db.create_all()
+
+class DataAnalysisLogMould(db.Model):
+    __bind_key__ = 'analysis_db'
+    __tablename__ = 'data_analysis_log_mould'
+    id = db.Column(db.Integer, primary_key=True)
+    part_number = db.Column(db.String(100), nullable=False)
+    time_sent_to_shop_floor = db.Column(db.DateTime, nullable=False)
+    time_retrieved_back_to_storage = db.Column(db.DateTime, nullable=False)
+    total_time_on_shop_floor = db.Column(db.Interval, nullable=False)
+
+class DataAnalysisLogJig(db.Model):
+    __bind_key__ = 'analysis_db'
+    __tablename__ = 'data_analysis_log_jig'
+    id = db.Column(db.Integer, primary_key=True)
+    jig_number = db.Column(db.String(100), nullable=False)
+    time_sent_to_shop_floor = db.Column(db.DateTime, nullable=False)
+    time_retrieved_back_to_storage = db.Column(db.DateTime, nullable=False)
+    total_time_on_shop_floor = db.Column(db.Interval, nullable=False)
+
+with app.app_context():
+    db.create_all()
+@app.route('/save_tool', methods=['GET', 'POST'])
+def save_tool():
+    if request.method == 'POST':
+        form_type = request.form.get('form_type')  # either 'mould' or 'jig'
+        status = request.form.get('statuss')
+        uk_timezone = pytz.timezone('Europe/London')
+        timestamp_dt = datetime.now(uk_timezone).replace(tzinfo=None)  # Convert to naive datetime
+
+        if not status:
+            flash('Please select a status before saving.', 'warning')
+            return redirect(url_for('save_tool'))
+
+        if form_type == 'mould':
+            raw = request.form.get('part_numberr', '')
+            parts = [p.strip() for p in raw.split(',') if p.strip()]
+            if not parts:
+                flash('Please scan at least one mould tool number.', 'warning')
+                return redirect(url_for('save_tool'))
+            for p in parts:
+                existing_part = ShopFloorToolLog.query.filter_by(part_number=p).first()
+                if status == 'Retrieved Back to Storage' and not existing_part:
+                    flash(f'Mould tool number {p} is not present in shop floor to be retrieved.', 'warning')
+                    continue
+                if existing_part:
+                    if status == 'Retrieved Back to Storage':
+                        time_sent_to_shop_floor = existing_part.timestamp.replace(tzinfo=None)
+                        total_time_on_shop_floor = timestamp_dt - time_sent_to_shop_floor
+                        new_analysis_log = DataAnalysisLogMould(
+                            part_number=p,
+                            time_sent_to_shop_floor=time_sent_to_shop_floor,
+                            time_retrieved_back_to_storage=timestamp_dt,
+                            total_time_on_shop_floor=total_time_on_shop_floor
+                        )
+                        db.session.add(new_analysis_log)
+                        db.session.delete(existing_part)
+                        flash(f'Mould tool number {p} retrieved back to storage and deleted.', 'success')
+                    else:
+                        flash(f'Mould tool number already exists.', 'warning')
+                    continue
+                new_log = ShopFloorToolLog(
+                    part_number=p,
+                    status=status,
+                    timestamp=timestamp_dt
+                )
+                db.session.add(new_log)
+                flash(f'New tool saved', 'success')
+
+        elif form_type == 'jig':
+            raw = request.form.get('jig_number', '')
+            jigs = [j.strip() for j in raw.split(',') if j.strip()]
+            if not jigs:
+                flash('Please scan at least one jig number.', 'warning')
+                return redirect(url_for('save_tool'))
+            for j in jigs:
+                existing_jig = JigLog.query.filter_by(jig_number=j).first()
+                if status == 'Retrieved Back to Storage' and not existing_jig:
+                    flash(f'Jig number {j} is not present in shop floor to be retrieved.', 'warning')
+                    continue
+                if existing_jig:
+                    if status == 'Retrieved Back to Storage':
+                        time_sent_to_shop_floor = existing_jig.timestamp.replace(tzinfo=None)
+                        total_time_on_shop_floor = timestamp_dt - time_sent_to_shop_floor
+                        new_analysis_log = DataAnalysisLogJig(
+                            jig_number=j,
+                            time_sent_to_shop_floor=time_sent_to_shop_floor,
+                            time_retrieved_back_to_storage=timestamp_dt,
+                            total_time_on_shop_floor=total_time_on_shop_floor
+                        )
+                        db.session.add(new_analysis_log)
+                        db.session.delete(existing_jig)
+                        flash(f'Jig number {j} retrieved back to storage and deleted.', 'success')
+                    else:
+                        flash(f'Jig number already exists.', 'warning')
+                    continue
+                new_log = JigLog(
+                    jig_number=j,
+                    status=status,
+                    timestamp=timestamp_dt
+                )
+                db.session.add(new_log)
+                flash(f'New jig saved', 'success')
+
+        else:
+            flash('Unknown form submission.', 'error')
+            return redirect(url_for('save_tool'))
+
+        db.session.commit()
+        return redirect(url_for('save_tool'))
+
+    mould_logs = ShopFloorToolLog.query.order_by(ShopFloorToolLog.timestamp.desc()).all()
+    jig_logs = JigLog.query.order_by(JigLog.timestamp.desc()).all()
+    return render_template('save_tool.html', mould_logs=mould_logs, jig_logs=jig_logs)
+
+
+
+def format_timedelta_days_hours_minutes(td):
+    total_seconds = int(td.total_seconds())
+    days, remainder = divmod(total_seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    formatted_time = ""
+    if days > 0:
+        formatted_time += f"{days} day{'s' if days > 1 else ''} "
+    if hours > 0:
+        formatted_time += f"{hours} hr{'s' if hours > 1 else ''} "
+    if minutes > 0:
+        formatted_time += f"{minutes} min{'s' if minutes > 1 else ''}"
+
+    return formatted_time.strip()
+
+@app.route('/import_excel', methods=['POST'])
+def import_excel():
+    file = request.files.get('file')
+
+    if not file:
+        return "No file uploaded", 400
+
+    filename = secure_filename(file.filename)
+    if not filename.endswith(('.xlsx', '.xls', '.csv')):
+        return "Unsupported file format", 400
+
+    try:
+        if filename.endswith('.csv'):
+            df = pd.read_csv(file)
+        else:
+            df = pd.read_excel(file)
+
+        expected_columns = ['PART NUMBER', 'TOOL LOCATION', 'JIG LOCATION', 'PLUG LOCATION', 'FIT CHECK LOCATION']
+        if not all(col in df.columns for col in expected_columns):
+            return "Missing expected columns in the file", 400
+
+        # Drop rows with empty or NaN 'PART NUMBER'
+        df = df.dropna(subset=['PART NUMBER'])
+
+        # Strip whitespace and ensure string type
+        df['PART NUMBER'] = df['PART NUMBER'].astype(str).str.strip()
+
+        for _, row in df.iterrows():
+            part_number = row['PART NUMBER']
+            if not part_number:
+                continue  # Skip empty part numbers
+
+            part = Part.query.filter_by(part_number=part_number).first()
+            if part:
+                part.tool_location = row['TOOL LOCATION']
+                part.jig_location = row['JIG LOCATION']
+                part.plug_location = row['PLUG LOCATION']
+                part.fit_check_location = row['FIT CHECK LOCATION']
+            else:
+                new_part = Part(
+                    part_number=part_number,
+                    tool_location=row['TOOL LOCATION'],
+                    jig_location=row['JIG LOCATION'],
+                    plug_location=row['PLUG LOCATION'],
+                    fit_check_location=row['FIT CHECK LOCATION']
+                )
+                db.session.add(new_part)
+
+        db.session.commit()
+        return "Import successful"
+
+    except Exception as e:
+        print("Import error:", e)
+        return f"Failed to import file: {e}", 500
+@app.route('/export_csv', methods=['GET'])
+def export_csv():
+    # Query all parts from the database
+    parts = Part.query.all()
+
+    # Prepare data for Excel
+    data = [{
+        'PART NUMBER': part.part_number,
+        'TOOL LOCATION': part.tool_location,
+        'JIG LOCATION': part.jig_location,
+        'PLUG LOCATION': part.plug_location,
+        'FIT CHECK LOCATION': part.fit_check_location
+    } for part in parts]
+
+    # Create DataFrame and Excel file in memory
+    df = pd.DataFrame(data)
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='ToolData')
+
+    output.seek(0)
+
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        download_name='ToolData.xlsx',
+        as_attachment=True
+    )
+@app.route('/data_analysis')
+def data_analysis():
+    mould_logs = DataAnalysisLogMould.query.order_by(DataAnalysisLogMould.time_retrieved_back_to_storage.desc()).all()
+    jig_logs = DataAnalysisLogJig.query.order_by(DataAnalysisLogJig.time_retrieved_back_to_storage.desc()).all()
+    return render_template('data_analysis.html', mould_logs=mould_logs, jig_logs=jig_logs)
+
+@app.route('/clear_data_analysis', methods=['POST'])
+def clear_data_analysis():
+    try:
+        DataAnalysisLogMould.query.delete()
+        DataAnalysisLogJig.query.delete()
+        db.session.commit()
+        flash('All data analysis logs have been cleared.', 'success')
+    except OperationalError:
+        db.session.rollback()
+        flash('Database is locked. Please try again later.', 'danger')
+    return redirect(url_for('data_analysis'))
+
+
+@app.route('/split1test')
+def split1test():
+    moulds_in_use = ShopFloorToolLog.query.filter_by(status='Sent to Shop Floor').count()
+    jigs_in_use = JigLog.query.filter_by(status='Sent to Shop Floor').count()
+
+    print("Moulds in use:", moulds_in_use)
+    print("Jigs in use:", jigs_in_use)
+
+    return render_template('SPLIT 1 TEST.html',
+                           moulds_in_use=5,
+                           jigs_in_use=3)
+
+
+
+@app.route('/api/jig_logs')
+def get_jig_logs():
+    jigs = JigLog.query.all()
+    jig_data = [{
+        'id': jig.id,
+        'jig_number': jig.jig_number,
+        'status': jig.status,
+        'timestamp': jig.timestamp.isoformat()
+    } for jig in jigs]
+    return jsonify(jig_data)
+
+@app.template_filter('format_duration')
+def format_duration(td):
+    total_seconds = int(td.total_seconds())
+    days = total_seconds // 86400
+    hours = (total_seconds % 86400) // 3600
+    minutes = (total_seconds % 3600) // 60
+
+    parts = []
+    if days:
+        parts.append(f"{days} day{'s' if days > 1 else ''}")
+    if hours:
+        parts.append(f"{hours} hr{'s' if hours > 1 else ''}")
+    if minutes:
+        parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
+    return ' '.join(parts) if parts else '0 minutes'
+
+
+@app.route('/update_tool_status/<int:log_id>', methods=['POST'])
+def update_tool_status(log_id):
+    data = request.get_json()
+    status = data.get('status')
+    log = ShopFloorToolLog.query.get(log_id)
+
+    if log:
+        log.status = status
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'success': False})
+
+
+@app.route('/delete_tool_log/<int:log_id>', methods=['POST'])
+def delete_tool_log(log_id):
+    log = ShopFloorToolLog.query.get(log_id)
+
+    if log:
+        db.session.delete(log)
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'success': False})
+
+
+
+@app.route('/save-tool', methods=['POST'])
+def savetool():
+    part_number = request.form['part_number']
+    print("Saving part:", part_number)
+    tool_location = request.form.get('tool_location')
+    jig_location = request.form.get('jig_location')
+    plug_location = request.form.get('plug_location')
+    fit_check_location = request.form.get('fit_check_location')
+
+    # Check if part already exists (optional)
+    existing = Part.query.filter_by(part_number=part_number).first()
+    if existing:
+        flash('Part already exists!', 'error')
+        return redirect(url_for('view_tools'))
+
+    new_part = Part(
+        part_number=part_number,
+        tool_location=tool_location,
+        jig_location=jig_location,
+        plug_location=plug_location,
+        fit_check_location=fit_check_location
+    )
+    db.session.add(new_part)
+    db.session.commit()
+    # Flash success message
+    flash('Tool saved successfully!', 'success')
+
+    # Redirect to the index or view tools page
+    return redirect(url_for('view_tools'))
+
+@app.route('/update_tool/<int:tool_id>', methods=['POST'])
+def update_tool(tool_id):
+    data = request.get_json()  # Get the JSON data from the request
+
+    # Debugging - log the received data
+    print(f"Received data for tool {tool_id}: {data}")
+
+    tool = Part.query.get(tool_id)
+    if not tool:
+        return jsonify({'error': 'Tool not found'}), 404
+
+    # Update the tool attributes with the received data
+    tool.tool_location = data.get('tool_location', tool.tool_location)
+    tool.jig_location = data.get('jig_location', tool.jig_location)
+    tool.plug_location = data.get('plug_location', tool.plug_location)
+    tool.fit_check_location = data.get('fit_check_location', tool.fit_check_location)
+
+    db.session.commit()
+
+    # Return the updated tool as a response
+    return jsonify({
+        'id': tool.id,
+        'tool_location': tool.tool_location,
+        'jig_location': tool.jig_location,
+        'plug_location': tool.plug_location,
+        'fit_check_location': tool.fit_check_location
+    })
+
+
+@app.route('/delete_tool/<int:tool_id>', methods=['POST'])
+def delete_tool(tool_id):
+    tool = Part.query.get(tool_id)
+    if not tool:
+        return jsonify({'error': 'Tool not found'}), 404
+
+    db.session.delete(tool)
+    db.session.commit()
+
+    return jsonify({'success': True})
+@app.route('/search_tools', methods=['POST'])
+def search_tools():
+    try:
+        part_number = request.form.get('part_number', '').strip()
+        tool_location = request.form.get('tool_location', '').strip()
+        jig_location = request.form.get('jig_location', '').strip()
+        plug_location = request.form.get('plug_location', '').strip()
+        fit_check_location = request.form.get('fit_check_location', '').strip()
+
+        filters = []
+        if part_number:
+            filters.append(Part.part_number.ilike(f"%{part_number}%"))
+        if tool_location:
+            filters.append(Part.tool_location.ilike(f"%{tool_location}%"))
+        if jig_location:
+            filters.append(Part.jig_location.ilike(f"%{jig_location}%"))
+        if plug_location:
+            filters.append(Part.plug_location.ilike(f"%{plug_location}%"))
+        if fit_check_location:
+            filters.append(Part.fit_check_location.ilike(f"%{fit_check_location}%"))
+
+        if not filters:
+            return jsonify({'tools': []})
+
+        tools = Part.query.filter(or_(*filters)).all()
+
+        return jsonify({
+            'tools': [
+                {
+                    'id': tool.id,
+                    'part_number': tool.part_number,
+                    'tool_location': tool.tool_location,
+                    'jig_location': tool.jig_location,
+                    'plug_location': tool.plug_location,
+                    'fit_check_location': tool.fit_check_location,
+                } for tool in tools
+            ]
+        })
+
+    except SQLAlchemyError as e:
+        print("Database error:", e)
+        return jsonify({'error': 'Database query failed'}), 500
+
+    except Exception as e:
+        print("Unexpected error:", e)
+        return jsonify({'error': 'Unexpected server error'}), 500
+
+@app.route('/clear_db', methods=['POST'])
+def clear_db():
+    # Verify the password securely (you can improve this logic in a production environment)
+    correct_password = 'Infy@123'
+    data = request.get_json()
+    if not data or 'password' not in data:
+        return jsonify({'error': 'No password provided'}), 400
+
+    password = data.get('password')
+
+    if password == correct_password:
+        try:
+            # Clear all data in the Part table
+            db.session.query(Part).delete()
+            db.session.commit()
+            return jsonify({'message': 'Database cleared successfully.'}), 200
+        except Exception as e:
+            db.session.rollback()  # In case something goes wrong
+            return jsonify({'error': 'An error occurred while clearing the database.'}), 500
+    else:
+        return jsonify({'error': 'Incorrect password. Database not cleared.'}), 403
 
 # Configure cache (using SimpleCache for in-memory caching)
 app.config['CACHE_TYPE'] = 'SimpleCache'
 cache = Cache(app)
+
 
 # SharePoint authentication details
 site_url = "https://donite1.sharepoint.com/sites/Donite"
@@ -446,9 +950,17 @@ def get_saved_data():
         app.logger.error(f"Error while fetching saved data: {e}")
         return jsonify({"error": "Failed to fetch saved data"}), 500
 
+
+
 @app.route("/STOCKCHECK")
 def stock_check():
     return render_template("SPLIT 2 TEST.html")
+
+@app.route('/view_tools')
+def view_tools():
+    tools = Part.query.all()
+    return render_template('view_tools.html', tools=tools)
+
 
 @app.route("/PPAR")
 def PPAR():

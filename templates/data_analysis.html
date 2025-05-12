@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Analysis - Mould Tool Logs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1100px;
+            margin-top: 60px;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.08);
+        }
+        h2 {
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #343a40;
+        }
+        table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        ad {
+            background-color: #343a40;
+            color: #ffffff;
+        }
+        tbody tr:hover {
+            background-color: #f1f1f1;
+            transition: background-color 0.3s;
+        }
+        td, th {
+            vertical-align: middle !important;
+        }
+        .chart-container {
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Mould Tool Data Analysis</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Mould Tool Number</th>
+                        <th scope="col">Time Sent to Shop Floor</th>
+                        <th scope="col">Time Retrieved Back to Storage</th>
+                        <th scope="col">Total Time on Shop Floor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in mould_logs %}
+                    <tr>
+                        <td>{{ log.part_number }}</td>
+                        <td>{{ log.time_sent_to_shop_floor.strftime('%Y-%m-%d, %I %p %M minutes') }}</td>
+                        <td>{{ log.time_retrieved_back_to_storage.strftime('%Y-%m-%d, %I %p %M minutes') }}</td>
+                        <td>{{ log.total_time_on_shop_floor|format_duration }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Jig Data Analysis</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Jig Number</th>
+                        <th scope="col">Time Sent to Shop Floor</th>
+                        <th scope="col">Time Retrieved Back to Storage</th>
+                        <th scope="col">Total Time on Shop Floor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in jig_logs %}
+                    <tr>
+                        <td>{{ log.jig_number }}</td>
+                        <td>{{ log.time_sent_to_shop_floor.strftime('%Y-%m-%d, %I %p %M minutes') }}</td>
+                        <td>{{ log.time_retrieved_back_to_storage.strftime('%Y-%m-%d, %I %p %M minutes') }}</td>
+                        <td>{{ log.total_time_on_shop_floor|format_duration }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+       <div class="chart-container">
+    <h4 class="text-center">Mould Tool Time on Shop Floor</h4>
+    <canvas id="mouldChart"></canvas>
+</div>
+
+<div class="chart-container">
+    <h4 class="text-center">Jig Time on Shop Floor</h4>
+    <canvas id="jigChart"></canvas>
+</div>
+
+
+        <form id="clearDataForm" action="{{ url_for('clear_data_analysis') }}" method="post" style="margin-top: 20px;">
+            <button type="submit" class="btn btn-danger" onclick="return confirmClearData()">Clear All Data</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    function confirmClearData() {
+        const password = prompt("Enter password to clear all data:");
+        if (password === "Infy@123") {
+            return true;
+        } else {
+            alert("Incorrect password. Data not cleared.");
+            return false;
+        }
+    }
+
+    const mouldLabels = [{% for log in mould_logs %}'{{ log.part_number }}'{% if not loop.last %},{% endif %}{% endfor %}];
+    const mouldData = [{% for log in mould_logs %}{{ (log.total_time_on_shop_floor.total_seconds() / 3600)|round(2) }}{% if not loop.last %},{% endif %}{% endfor %}];
+
+    const jigLabels = [{% for log in jig_logs %}'{{ log.jig_number }}'{% if not loop.last %},{% endif %}{% endfor %}];
+    const jigData = [{% for log in jig_logs %}{{ (log.total_time_on_shop_floor.total_seconds() / 3600)|round(2) }}{% if not loop.last %},{% endif %}{% endfor %}];
+
+    const mouldCtx = document.getElementById('mouldChart').getContext('2d');
+    new Chart(mouldCtx, {
+        type: 'bar',
+        data: {
+            labels: mouldLabels,
+            datasets: [{
+                label: 'Mould Tool Time (hrs)',
+                data: mouldData,
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Hours'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Mould Tool Number'
+                    }
+                }
+            }
+        }
+    });
+
+    const jigCtx = document.getElementById('jigChart').getContext('2d');
+    new Chart(jigCtx, {
+        type: 'bar',
+        data: {
+            labels: jigLabels,
+            datasets: [{
+                label: 'Jig Time (hrs)',
+                data: jigData,
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Hours'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Jig Number'
+                    }
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>

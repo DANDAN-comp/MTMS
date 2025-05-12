@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Save Tool</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="container">
+        <h2 class="mt-4">MOULD TOOLS IN SHOP FLOOR</h2>
+
+        <hr>
+        <h4>Saved Tool Entries</h4>
+        {% if mould_logs %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>S.No</th>
+                        <th>Mould Tool Number(s)</th>
+                        <th>Status</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in mould_logs %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ log.part_number }}</td>
+                        <td>{{ log.status }}</td>
+                        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No entries saved yet.</p>
+        {% endif %}
+        <hr>
+        <h2 class="mt-4">JIGS IN SHOP FLOOR</h2>
+ <hr>
+        <h4>Saved Jig Entries</h4>
+        {% if jig_logs %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>S.No</th>
+                        <th>Jig Number(s)</th>
+                        <th>Status</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in jig_logs %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ log.jig_number }}</td>
+                        <td>{{ log.status }}</td>
+                        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No entries saved yet.</p>
+        {% endif %}
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        Swal.fire({
+                            icon: '{{ 'success' if 'success' in category else 'warning' }}',
+                            title: '{{ 'Success' if 'success' in category else 'Warning' }}',
+                            text: '{{ message }}',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        });
+    </script>
+</body>
+</html>
