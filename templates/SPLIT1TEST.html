@@ -65,8 +65,9 @@
                 <div class="card bg-primary text-white h-100">
                     <div class="card-body d-flex flex-column justify-content-center">
                         <i class="fas fa-cubes mb-3"></i>
-                        <h5>Total Moulds</h5>
-                        <p style="font-size: 2rem; margin: 0;">123</p>
+
+                        <h5>Total Thompson's Mould Tools</h5>
+                        <p style="font-size: 2rem; margin: 0;">{{ total_moulds }}</p>
                     </div>
                 </div>
             </div>
@@ -75,7 +76,11 @@
                     <div class="card-body d-flex flex-column justify-content-center">
                         <i class="fas fa-plus-circle mb-3"></i>
                         <h5>Recently Added</h5>
-                        <p style="margin: 0;">Mould #101, Mould #102</p>
+<p style="margin: 0;">
+  {% for part in recently_added %}
+    Mould #{{ part.part_number }}{% if not loop.last %}, {% endif %}
+  {% endfor %}
+</p>
                     </div>
                 </div>
             </div>

@@ -12,11 +12,16 @@ import pytz
 import sqlite3
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import text, Integer, String, Float, or_
+from sqlalchemy import text, Integer, String, Float, or_, and_, not_, func
 import time
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from flask import jsonify
 from werkzeug.utils import secure_filename
+from flask_mail import Mail, Message
+from apscheduler.schedulers.background import BackgroundScheduler
+import csv, io
+
+
 
 
 
@@ -36,7 +41,15 @@ app.config['SQLALCHEMY_BINDS'] = {
     'analysis_db': 'sqlite:///AnalysisLog.db',
 
 }
+# Email config
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Or your SMTP
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
+app.config['MAIL_PASSWORD'] = 'your_app_password'
+app.config['MAIL_DEFAULT_SENDER'] = 'your_email@gmail.com'
 
+mail = Mail(app)
 
 db = SQLAlchemy(app)
 
@@ -190,32 +203,71 @@ def save_tool():
     jig_logs = JigLog.query.order_by(JigLog.timestamp.desc()).all()
     return render_template('save_tool.html', mould_logs=mould_logs, jig_logs=jig_logs)
 
+
+from sqlalchemy import and_, not_, func
+
+@app.route("/")
+def home():
+    # Total Moulds (filtered)
+    valid_parts = Part.query.filter(
+        and_(
+            Part.tool_location.isnot(None),
+            func.length(func.trim(Part.tool_location)) > 0,
+            not_(func.lower(func.trim(Part.tool_location)).like("returned%")),
+            func.lower(func.trim(Part.tool_location)) != "none"
+        )
+    ).all()
+    total_moulds = len(valid_parts)
+
+    # Moulds and Jigs in Use
+    moulds_in_use = ShopFloorToolLog.query.count()
+    jigs_in_use = JigLog.query.count()
+
+    # Recently Added (last 2 parts)
+    recently_added = Part.query.order_by(Part.id.desc()).limit(2).all()
+
+    return render_template(
+        "SPLIT1TEST.html",
+        total_moulds=total_moulds,
+        moulds_in_use=moulds_in_use,
+        jigs_in_use=jigs_in_use,
+        recently_added=recently_added
+    )
+
+
+
+
 @app.route('/update_tools', methods=['POST'])
 def update_tools():
-    tools = request.form.to_dict(flat=False)
+    from collections import defaultdict
 
-    # Loop over all rows using the index keys
-    row_count = len(tools['tools[0][part_number]'])  # assuming consistent length
+    tools_data = defaultdict(dict)
 
-    for i in range(row_count):
-        part_number = tools[f'tools[{i}][part_number]'][0]
-        tool_location = tools[f'tools[{i}][tool_location]'][0]
-        jig_location = tools[f'tools[{i}][jig_location]'][0]
-        plug_location = tools[f'tools[{i}][plug_location]'][0]
-        fit_check_location = tools[f'tools[{i}][fit_check_location]'][0]
+    # Structure the form data
+    for key in request.form:
+        if key.startswith("tools["):
+            try:
+                index = key.split('[')[1].split(']')[0]
+                field = key.split('][')[1].split(']')[0]
+                tools_data[index][field] = request.form[key]
+            except IndexError:
+                print(f"Skipping malformed key: {key}")
 
-        part = Part.query.filter_by(part_number=part_number).first()
-        if part:
-            part.tool_location = tool_location
-            part.jig_location = jig_location
-            part.plug_location = plug_location
-            part.fit_check_location = fit_check_location
-        else:
-            flash(f"Part number {part_number} not found.", "error")
+    # Update the DB
+    for data in tools_data.values():
+        part_number = data.get("part_number")
+        if part_number:
+            part = Part.query.filter_by(part_number=part_number).first()
+            if part:
+                part.tool_location = data.get("tool_location")
+                part.jig_location = data.get("jig_location")
+                part.plug_location = data.get("plug_location")
+                part.fit_check_location = data.get("fit_check_location")
 
     db.session.commit()
-    flash("Tool locations updated successfully!", "success")
-    return redirect(url_for('view_tools'))  # Change 'view_tools' if your endpoint differs
+    flash("Tool updates saved!", "success")
+    return redirect('/view_tools')
+
 
 def format_timedelta_days_hours_minutes(td):
     total_seconds = int(td.total_seconds())
@@ -342,7 +394,7 @@ def split1test():
     print("Moulds in use:", moulds_in_use)
     print("Jigs in use:", jigs_in_use)
 
-    return render_template('SPLIT 1 TEST.html',
+    return render_template('SPLIT1TEST.html',
                            moulds_in_use=5,
                            jigs_in_use=3)
 
@@ -581,6 +633,44 @@ def upload_to_sharepoint(file_url, file_content):
         raise
 
 
+
+def export_and_send_email():
+    with app.app_context():
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Write CSV headers
+        writer.writerow(['ID', 'Part Number', 'Tool Location', 'Jig Location', 'Plug Location', 'Fit Check Location'])
+
+        # Query database
+        records = Part.query.all()
+        for record in records:
+            writer.writerow([
+                record.id,
+                record.part_number,
+                record.tool_location,
+                record.jig_location,
+                record.plug_location,
+                record.fit_check_location
+            ])
+
+        # Move to start of file
+        output.seek(0)
+
+        # Create email
+        msg = Message("Weekly Mould Tool Database Report",
+                      recipients=["daniel@donite.com"])
+        msg.body = f"Hi,\n\nPlease find attached the weekly database report (Week {datetime.now().isocalendar()[1]}).\n\nRegards,\nAutomated System"
+        msg.attach(f"MouldTool_Report_Week{datetime.now().isocalendar()[1]}.csv", "text/csv", output.read())
+
+        # Send
+        mail.send(msg)
+        print("Email sent with CSV attachment.")
+
+scheduler = BackgroundScheduler()
+# Run every Friday at 3:00 PM (15:00)
+scheduler.add_job(export_and_send_email, 'cron', day_of_week='fri', hour=15, minute=0)
+scheduler.start()
 @app.errorhandler(500)
 def internal_error(error):
     return "500 error: An internal server error occurred.", 500
@@ -818,9 +908,7 @@ def delete_row_from_sharepoint(advice_note):
         upload_to_sharepoint(file_url, file_stream)
     else:
         raise Exception(f"Advice Note {advice_note} not found")
-@app.route("/")
-def home():
-    return render_template("SPLIT 1 TEST.html")
+
 
 @app.route('/get_price_from_donite_sheet', methods=['POST'])
 def get_price_from_donite_sheet_route():
