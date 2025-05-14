@@ -40,15 +40,7 @@ app.config['SQLALCHEMY_BINDS'] = {
     'analysis_db': 'sqlite:///AnalysisLog.db',
 
 }
-# Email config
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Or your SMTP
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
-app.config['MAIL_PASSWORD'] = 'your_app_password'
-app.config['MAIL_DEFAULT_SENDER'] = 'your_email@gmail.com'
 
-mail = Mail(app)
 
 db = SQLAlchemy(app)
 
@@ -633,46 +625,7 @@ def upload_to_sharepoint(file_url, file_content):
 
 
 
-def export_and_send_email():
-    with app.app_context():
-        output = io.StringIO()
-        writer = csv.writer(output)
 
-        # Write CSV headers
-        writer.writerow(['ID', 'Part Number', 'Tool Location', 'Jig Location', 'Plug Location', 'Fit Check Location'])
-
-        # Query database
-        records = Part.query.all()
-        for record in records:
-            writer.writerow([
-                record.id,
-                record.part_number,
-                record.tool_location,
-                record.jig_location,
-                record.plug_location,
-                record.fit_check_location
-            ])
-
-        # Move to start of file
-        output.seek(0)
-
-        # Create email
-        msg = Message("Weekly Mould Tool Database Report",
-                      recipients=["daniel@donite.com"])
-        msg.body = f"Hi,\n\nPlease find attached the weekly database report (Week {datetime.now().isocalendar()[1]}).\n\nRegards,\nAutomated System"
-        msg.attach(f"MouldTool_Report_Week{datetime.now().isocalendar()[1]}.csv", "text/csv", output.read())
-
-        # Send
-        mail.send(msg)
-        print("Email sent with CSV attachment.")
-
-scheduler = BackgroundScheduler()
-# Run every Friday at 3:00 PM (15:00)
-scheduler.add_job(export_and_send_email, 'cron', day_of_week='fri', hour=15, minute=0)
-scheduler.start()
-@app.errorhandler(500)
-def internal_error(error):
-    return "500 error: An internal server error occurred.", 500
 
 
 # Optimized function to fetch and process the despatch data
