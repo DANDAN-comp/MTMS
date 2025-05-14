@@ -18,7 +18,6 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from flask import jsonify
 from werkzeug.utils import secure_filename
 
-from apscheduler.schedulers.background import BackgroundScheduler
 import csv, io
 
 

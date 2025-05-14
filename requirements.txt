@@ -15,4 +15,4 @@ Flask-SQLAlchemy==3.0.3
 Flask-Migrate==4.0.4
 pymongo==4.3.3
 Flask-Caching==2.3.0
-Flask-Mail==0.10.0
+
